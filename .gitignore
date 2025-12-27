@@ -1,0 +1,28 @@
+# Unreal Engine 프로젝트 무시 설정
+Binaries/
+Build/
+Plugins/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vscode/
+.vs/
+GEMINI.md
+
+# 에셋(Content) 폴더 안에서도 필요한 경우 제외
+Content/**/*
+!Content/Blueprints/**/*
+!Content/Config/**/*
+!Content/Materials/**/BaseMaterial.uasset
+
+# 프로젝트 설정 파일 포함
+*.uproject
+Config/
+
+# 임시 파일 및 OS 관련 파일
+*.suo
+*.user
+*.log
+*.tmp
+*.DS_Store
+Thumbs.db
