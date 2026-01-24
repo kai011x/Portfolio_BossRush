@@ -14,6 +14,7 @@
 #include "InputActionValue.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Engine/DataTable.h"
 #include "CharacterBase.generated.h"
 
 
@@ -62,6 +63,7 @@ public:
 	virtual class UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 
+
 public:
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -91,7 +93,7 @@ public:
 	UInputAction* NormalAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* NormalSkill;
+	UInputAction* StrongAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* UltraSkill;
@@ -113,6 +115,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Input")
 	FVector2D CurrentInputVector;
 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
+	UDataTable* DT_NormalAttackCombo;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -124,13 +130,19 @@ protected:
 
 	// [추가 2] ASC 컴포넌트 변수 선언
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
-	class UAbilitySystemComponent* AbilitySystemComponent;
+	UAbilitySystemComponent* AbilitySystemComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
+	class UBasicAttributeSet* BasicAttributeSet;
 
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Abilities")
 	EGameplayEffectReplicationMode ReplicationMode = EGameplayEffectReplicationMode::Mixed;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> StartingAbilities;
+
  
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -145,9 +157,23 @@ public:
 	void FastRun(const FInputActionValue& Value);
 
 
+
+
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Dash")
 	void Dash(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "AttackAction")
+	void OnNormalAttackInput();
+
+	UFUNCTION(BlueprintCallable, Category = "Abilities")
+	TArray<FGameplayAbilitySpecHandle> GrantAbilities(TArray<TSubclassOf<UGameplayAbility>> AbilitiesToGrant);
+
+	UFUNCTION(BlueprintCallable, Category = "Abilities")
+	void RemoveAbilities(TArray<FGameplayAbilitySpecHandle> AbilityHandlesToRemove);
+
+	UFUNCTION(BlueprintCallable, Category = "Abilities")
+	void SendAbilitiesChangedEvent();
 
 
 protected:
