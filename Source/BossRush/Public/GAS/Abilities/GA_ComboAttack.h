@@ -47,12 +47,15 @@ public:
 	// 다음 공격 입력이 들어왔는지 체크하는 플래그
 	bool bNextInputPressed;
 
-	// 콤보 체크용 태그 (예: Event.Montage.CheckCombo)
-	UPROPERTY(EditDefaultsOnly, Category = "Combo")
-	FGameplayTag ComboCheckTag;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Combo")
+	UPROPERTY(BlueprintReadOnly, Category = "Combo")
 	UDataTable* ComboDataTable;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Config")
+	FGameplayTag InputTag;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Config")
+	FGameplayTag CheckTag;
 
 	UPROPERTY()
 	class UAbilityTask_WaitGameplayEvent* InputWaitTask;

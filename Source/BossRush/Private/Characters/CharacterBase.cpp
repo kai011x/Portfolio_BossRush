@@ -60,8 +60,6 @@ ACharacterBase::ACharacterBase()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	//Add the basic attribute set
-	BasicAttributeSet = CreateDefaultSubobject<UBasicAttributeSet>(TEXT("BasicAttributeSet"));
 
 
 }
@@ -124,9 +122,6 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACharacterBase::Look);
 
-		// Fast Run
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &ACharacterBase::FastRun);
-		
 		// Dash
 		EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Started, this, &ACharacterBase::Dash);
 		
@@ -188,23 +183,6 @@ void ACharacterBase::Look(const FInputActionValue& Value)
 	}
 }
 
-void ACharacterBase::FastRun(const FInputActionValue& Value)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Sprint Function"));
-
-	if (GetCharacterMovement())
-	{
-		if (GetCharacterMovement()->MaxWalkSpeed > 600.f)
-		{
-			GetCharacterMovement()->MaxWalkSpeed = 600.f;
-		}
-		else
-		{
-			GetCharacterMovement()->MaxWalkSpeed = 900.f;
-			bUseControllerRotationYaw = false;
-		}
-	}
-}
 
 
 

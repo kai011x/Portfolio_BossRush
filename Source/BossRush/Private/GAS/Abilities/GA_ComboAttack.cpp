@@ -8,10 +8,6 @@
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
-
-UE_DEFINE_GAMEPLAY_TAG(TAG_Event_Attack_Input, "Event.Attack.Input");
-UE_DEFINE_GAMEPLAY_TAG(TAG_Event_Attack_Check, "Event.Attack.Check");
-
 UGA_ComboAttack::UGA_ComboAttack()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
@@ -29,13 +25,23 @@ void UGA_ComboAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, c
 	if (Character)
 	{
 		// 캐릭터가 가진 데이터 테이블 참조
-		ComboDataTable = Character->DT_NormalAttackCombo;
+
+		if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag(FName("Event.Attack.NormalInput"))))
+		{
+			ComboDataTable = Character->DT_NormalAttackCombo;
+		}
+		else
+		{
+			ComboDataTable = Character->DT_StrongAttackCombo;
+		}
+
+
 	}
 
 
 	InputWaitTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
 		this,
-		TAG_Event_Attack_Input, // 기다릴 태그: Event.Attack.Input
+		InputTag, // 기다릴 태그
 		nullptr,
 		false, // 중요: 한 번 받고 끝내지 않음 (계속 대기)
 		true   // 태그 정확히 일치
@@ -104,7 +110,7 @@ void UGA_ComboAttack::PlayComboAction()
 	
 	UAbilityTask_WaitGameplayEvent* CheckWaitTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
 		this,
-		TAG_Event_Attack_Check, // 기다릴 태그: Event.Attack.Check
+		CheckTag, // 기다릴 태그: Event.Attack.Check
 		nullptr,
 		true, // 신호를 한 번 받으면 이 태스크는 할 일을 다한 것임 (다음 Step에서 새로 만듦)
 		true

@@ -119,6 +119,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	UDataTable* DT_NormalAttackCombo;
 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
+	UDataTable* DT_StrongAttackCombo;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -132,8 +136,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	UAbilitySystemComponent* AbilitySystemComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
-	class UBasicAttributeSet* BasicAttributeSet;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Abilities")
+	TSubclassOf<UAttributeSet> AttributeSet;
 
 
 protected:
@@ -153,9 +159,6 @@ public:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-
-	void FastRun(const FInputActionValue& Value);
-
 
 
 
