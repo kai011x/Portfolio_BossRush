@@ -11,9 +11,10 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
-#include "GAS/AttributeSets/BasicAttributeSet.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Engine/ActorChannel.h" 
+#include "Net/UnrealNetwork.h"
 
 
 
@@ -60,7 +61,7 @@ ACharacterBase::ACharacterBase()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-
+	
 
 }
 
@@ -82,11 +83,25 @@ void ACharacterBase::PossessedBy(AController* NewController)
 	
 	if (AbilitySystemComponent)
 	{
+		if (AttributeSetClass && !AttributeSet)
+		{
+			// NewObject를 통해 실제 인스턴스(FighterAttributeSet 등)를 생성
+			AttributeSet = NewObject<UBasicAttributeSet>(this, AttributeSetClass, TEXT("AttributeSet"));
+			
+			UE_LOG(LogTemp, Warning, TEXT("Created Class Type: %s"), *AttributeSet->GetClass()->GetName());
+		
+		}
+
+
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 		GrantAbilities(StartingAbilities);
 
-	}
 
+		if (AttributeSet)
+		{
+			AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+		}
+	}
 }
 
 void ACharacterBase::OnRep_PlayerState()
@@ -98,6 +113,8 @@ void ACharacterBase::OnRep_PlayerState()
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	}
 }
+
+
 
 // Called every frame
 void ACharacterBase::Tick(float DeltaTime)
@@ -154,6 +171,8 @@ void ACharacterBase::Move(const FInputActionValue& Value)
 
 	if (Controller != nullptr)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Move X: %f, Y: %f"), CurrentInputVector.X, CurrentInputVector.Y);
+
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -234,3 +253,22 @@ void ACharacterBase::SendAbilitiesChangedEvent()
 
 }
 
+void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ACharacterBase, AttributeSet);
+}
+
+bool ACharacterBase::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
+{
+	// 부모 클래스 호출
+	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
+
+	if (AttributeSet)
+	{
+		bWroteSomething |= Channel->ReplicateSubobject(AttributeSet, *Bunch, *RepFlags);
+	}
+
+	return bWroteSomething;
+}

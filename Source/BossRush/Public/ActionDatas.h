@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Engine/DataTable.h"
+#include "GameplayTagContainer.h"
 #include "ActionDatas.generated.h"
 /**
  * 
@@ -89,3 +90,16 @@ public:
 };
 
 
+USTRUCT(BlueprintType)
+struct FMontageData : public FTableRowBase
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	FGameplayTag StateTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	class UAnimMontage* Montage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	float PlayRate = 1.0f;
+};

@@ -14,6 +14,7 @@
 #include "InputActionValue.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "GAS/AttributeSets/BasicAttributeSet.h"
 #include "Engine/DataTable.h"
 #include "CharacterBase.generated.h"
 
@@ -123,6 +124,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	UDataTable* DT_StrongAttackCombo;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
+	UDataTable* DT_Montages;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attribute")
+	TSubclassOf<UBasicAttributeSet> AttributeSetClass;
+
+	UPROPERTY(Replicated)
+	UBasicAttributeSet* AttributeSet;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -130,7 +140,9 @@ protected:
 
 	virtual void OnRep_PlayerState() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 
 	// [추가 2] ASC 컴포넌트 변수 선언
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
@@ -138,8 +150,7 @@ protected:
 
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Abilities")
-	TSubclassOf<UAttributeSet> AttributeSet;
+
 
 
 protected:
@@ -178,6 +189,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
 	void SendAbilitiesChangedEvent();
 
+
+	UFUNCTION(BlueprintCallable, Category = "Attribute")
+	UBasicAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
 protected:
 

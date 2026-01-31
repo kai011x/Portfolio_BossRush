@@ -53,6 +53,35 @@ public:
 	FGameplayAttributeData MaxResource;
 	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, MaxResource);
 
+	UPROPERTY(BlueprintReadOnly, Category = "DashCount", ReplicatedUsing = OnRep_DashCount)
+	FGameplayAttributeData DashCount;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, DashCount);
+
+	UPROPERTY(BlueprintReadOnly, Category = "DashCount", ReplicatedUsing = OnRep_MaxDashCount)
+	FGameplayAttributeData MaxDashCount;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, MaxDashCount);
+
+
+	UPROPERTY(BlueprintReadOnly, Category = "Defense", ReplicatedUsing = OnRep_Defense)
+	FGameplayAttributeData Defense;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, Defense);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attack", ReplicatedUsing = OnRep_Attack)
+	FGameplayAttributeData Attack;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, Attack);
+
+	// 이동 속도는 값이 바뀌면 실제 무브먼트 컴포넌트에 적용해야 하므로 OnRep 필수
+	UPROPERTY(BlueprintReadOnly, Category = "Speed", ReplicatedUsing = OnRep_RunSpeed)
+	FGameplayAttributeData RunSpeed;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, RunSpeed);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Speed", ReplicatedUsing = OnRep_SprintSpeed)
+	FGameplayAttributeData SprintSpeed;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, SprintSpeed);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Dash", ReplicatedUsing = OnRep_DashStrength)
+	FGameplayAttributeData DashStrength;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, DashStrength);
 
 
 public:
@@ -92,5 +121,33 @@ public:
 		GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, MaxResource, OldValue);
 	}
 
+	UFUNCTION()
+	void OnRep_DashCount(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, DashCount, OldValue); }
+
+	UFUNCTION()
+	void OnRep_MaxDashCount(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, MaxDashCount, OldValue); }
+
+	// [추가] 기타 스탯용 OnRep
+	UFUNCTION()
+	void OnRep_Defense(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, Defense, OldValue); }
+
+	UFUNCTION()
+	void OnRep_Attack(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, Attack, OldValue); }
+
+	UFUNCTION()
+	void OnRep_RunSpeed(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, RunSpeed, OldValue); }
+
+	UFUNCTION()
+	void OnRep_SprintSpeed(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, SprintSpeed, OldValue); }
+
+
+	UFUNCTION()
+	void OnRep_DashStrength(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, DashStrength, OldValue); }
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
+
+	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+
 };
