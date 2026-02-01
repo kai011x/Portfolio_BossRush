@@ -116,7 +116,6 @@ void UGA_ComboAttack::PlayComboAction()
 		true
 	);
 
-	UE_LOG(LogTemp, Warning, TEXT("Waiting for Combo Check Event"));
 
 	CheckWaitTask->EventReceived.AddDynamic(this, &UGA_ComboAttack::OnComboCheckEvent);
 	CheckWaitTask->ReadyForActivation();
@@ -126,10 +125,6 @@ void UGA_ComboAttack::OnInputReceived(FGameplayEventData Payload)
 {
 	// 유저가 클릭함 -> 다음 콤보 예약
 	bNextInputPressed = true;
-
-	// 로그 등으로 확인 가능
-	
-	UE_LOG(LogTemp, Warning, TEXT("Input Buffered!"));
 }
 
 

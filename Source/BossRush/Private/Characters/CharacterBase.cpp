@@ -130,7 +130,7 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacterBase::BaseJump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Moving
@@ -144,6 +144,12 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		
 		//Normal Attack
 		EnhancedInputComponent->BindAction(NormalAction, ETriggerEvent::Started, this, &ACharacterBase::OnNormalAttackInput);
+	
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ACharacterBase::StartSprint);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ACharacterBase::StopSprint);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Canceled, this, &ACharacterBase::StopSprint);
+
+	
 	}
 	else
 	{
@@ -171,8 +177,6 @@ void ACharacterBase::Move(const FInputActionValue& Value)
 
 	if (Controller != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Move X: %f, Y: %f"), CurrentInputVector.X, CurrentInputVector.Y);
-
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -201,6 +205,30 @@ void ACharacterBase::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
+
+void ACharacterBase::StartSprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetSprintSpeed();
+	FGameplayTag SprintStateTag = FGameplayTag::RequestGameplayTag("Character.State.Sprint");
+	// B. [핵심] 태그 직접 부착 (Loose Tag)
+	if (AbilitySystemComponent)
+	{
+		// "루즈 태그(Loose Tag)"란 어빌리티나 이펙트 없이 그냥 헐겁게(Loose) 붙인 태그라는 뜻입니다.
+		AbilitySystemComponent->AddLooseGameplayTag(SprintStateTag);
+	}
+}
+
+void ACharacterBase::StopSprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetRunSpeed();
+	FGameplayTag SprintStateTag = FGameplayTag::RequestGameplayTag("Character.State.Sprint");
+	// B. [핵심] 태그 직접 제거
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->RemoveLooseGameplayTag(SprintStateTag);
+	}
+}
+
 
 
 

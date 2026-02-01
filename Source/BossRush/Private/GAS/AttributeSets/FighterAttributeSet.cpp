@@ -14,8 +14,8 @@ UFighterAttributeSet::UFighterAttributeSet()
 	Resource = 0.0f;
 	MaxResource = 100.f;
 
-	RunSpeed = 600.f;
-	SprintSpeed = 900.f;
+	RunSpeed = 700.f;
+	SprintSpeed = 950.f;
 	
 	DashCount = 3;
 	MaxDashCount = 3;

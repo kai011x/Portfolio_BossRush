@@ -147,7 +147,7 @@ protected:
 	// [추가 2] ASC 컴포넌트 변수 선언
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	UAbilitySystemComponent* AbilitySystemComponent;
-
+	
 
 public:
 
@@ -171,11 +171,16 @@ public:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-
+	void StartSprint();
+	
+	void StopSprint();
 
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Dash")
 	void Dash(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Jump")
+	void BaseJump(const FInputActionValue& Value);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "AttackAction")
 	void OnNormalAttackInput();
