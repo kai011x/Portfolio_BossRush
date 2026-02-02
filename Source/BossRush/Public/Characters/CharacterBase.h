@@ -100,6 +100,9 @@ public:
 	UInputAction* UltraSkill;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* NormalSkill;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DashAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -126,6 +129,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	UDataTable* DT_Montages;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
+	UDataTable* DT_Skills;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attribute")
 	TSubclassOf<UBasicAttributeSet> AttributeSetClass;

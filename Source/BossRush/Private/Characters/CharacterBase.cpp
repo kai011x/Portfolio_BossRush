@@ -172,7 +172,12 @@ void ACharacterBase::NotifyControllerChanged()
 
 void ACharacterBase::Move(const FInputActionValue& Value)
 {
-	// input is a Vector2D
+	if (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag("Event.BlockInput")))
+	{
+		return;
+	}
+
+
 	CurrentInputVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
