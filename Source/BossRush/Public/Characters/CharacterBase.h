@@ -94,7 +94,7 @@ public:
 	UInputAction* NormalAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* StrongAction;
+	UInputAction* SubAction; //우클릭으로 실행되는 액션
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* UltraSkill;
@@ -122,7 +122,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	UDataTable* DT_NormalAttackCombo;
-
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	UDataTable* DT_StrongAttackCombo;

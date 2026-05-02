@@ -22,6 +22,7 @@ UFighterAttributeSet::UFighterAttributeSet()
 
 	Defense = 12.0f;
 	Attack = 60.0f;
+	Critical = 0.1f; // 10% 크리티컬 확률
 
 	DashStrength = 2000.0f;
 }

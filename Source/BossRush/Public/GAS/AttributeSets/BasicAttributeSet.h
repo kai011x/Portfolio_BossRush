@@ -70,6 +70,10 @@ public:
 	FGameplayAttributeData Attack;
 	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, Attack);
 
+	UPROPERTY(BlueprintReadOnly, Category = "Critical", ReplicatedUsing = OnRep_Critical)
+	FGameplayAttributeData Critical;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, Critical);
+
 	// 이동 속도는 값이 바뀌면 실제 무브먼트 컴포넌트에 적용해야 하므로 OnRep 필수
 	UPROPERTY(BlueprintReadOnly, Category = "Speed", ReplicatedUsing = OnRep_RunSpeed)
 	FGameplayAttributeData RunSpeed;
@@ -140,9 +144,14 @@ public:
 	UFUNCTION()
 	void OnRep_SprintSpeed(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, SprintSpeed, OldValue); }
 
-
 	UFUNCTION()
 	void OnRep_DashStrength(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, DashStrength, OldValue); }
+
+	UFUNCTION()
+	void OnRep_Critical(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, Critical, OldValue); }
+
+
+
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

@@ -14,4 +14,5 @@ class BOSSRUSH_API AFighter : public ACharacterBase
 {
 	GENERATED_BODY()
 	
+
 };
