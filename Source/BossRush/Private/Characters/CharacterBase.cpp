@@ -13,8 +13,13 @@
 #include "InputActionValue.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Abilities/GameplayAbilityTypes.h"
+#include "Abilities/GameplayAbility.h"
 #include "Engine/ActorChannel.h" 
+#include "GAS/Tags/GameplayTags.h"
+#include "ActionDatas.h"
 #include "Net/UnrealNetwork.h"
+
 
 
 
@@ -61,7 +66,6 @@ ACharacterBase::ACharacterBase()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	
 
 }
 
@@ -85,7 +89,7 @@ void ACharacterBase::PossessedBy(AController* NewController)
 	{
 		if (AttributeSetClass && !AttributeSet)
 		{
-			// NewObject∏¶ ≈Î«ÿ Ω«¡¶ ¿ŒΩ∫≈œΩ∫(FighterAttributeSet µÓ)∏¶ ª˝º∫
+			// Create AttributeSet instance
 			AttributeSet = NewObject<UBasicAttributeSet>(this, AttributeSetClass, TEXT("AttributeSet"));
 			
 			UE_LOG(LogTemp, Warning, TEXT("Created Class Type: %s"), *AttributeSet->GetClass()->GetName());
@@ -151,12 +155,8 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	
 	}
-	else
-	{
-
-	}
-
 } 
+
 void ACharacterBase::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -213,30 +213,89 @@ void ACharacterBase::Look(const FInputActionValue& Value)
 
 void ACharacterBase::StartSprint()
 {
-	GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetSprintSpeed();
-	FGameplayTag SprintStateTag = FGameplayTag::RequestGameplayTag("Character.State.Sprint");
-	// B. [«ŸΩ…] ≈¬±◊ ¡˜¡¢ ∫Œ¬¯ (Loose Tag)
+	// Ï°∞Ï§Ä Ï§ëÏùº ÎïåÎäî ÏßàÏ£º Î∂àÍ∞Ä
+	if (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().AimingStateTag))
+	{
+		return;
+	}
+
+	if (AttributeSet)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetSprintSpeed();
+	}
+	
 	if (AbilitySystemComponent)
 	{
-		// "∑Á¡Ó ≈¬±◊(Loose Tag)"∂ı æÓ∫Ù∏Æ∆º≥™ ¿Ã∆Â∆Æ æ¯¿Ã ±◊≥… «Ê∞Ã∞‘(Loose) ∫Ÿ¿Œ ≈¬±◊∂Û¥¬ ∂Ê¿‘¥œ¥Ÿ.
-		AbilitySystemComponent->AddLooseGameplayTag(SprintStateTag);
+		AbilitySystemComponent->AddLooseGameplayTag(FGameplayTags::Get().SprintStateTag);
 	}
 }
 
 void ACharacterBase::StopSprint()
 {
-	GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetRunSpeed();
-	FGameplayTag SprintStateTag = FGameplayTag::RequestGameplayTag("Character.State.Sprint");
-	// B. [«ŸΩ…] ≈¬±◊ ¡˜¡¢ ¡¶∞≈
+	if (AttributeSet)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetRunSpeed();
+	}
+
 	if (AbilitySystemComponent)
 	{
-		AbilitySystemComponent->RemoveLooseGameplayTag(SprintStateTag);
+		AbilitySystemComponent->RemoveLooseGameplayTag(FGameplayTags::Get().SprintStateTag);
 	}
 }
 
 
 
 
+
+void ACharacterBase::OnNormalAttackInput()
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	// 1. Sprint check
+	if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().SprintStateTag))
+	{
+		if (DT_Montages)
+		{
+			FMontageData* RowData = DT_Montages->FindRow<FMontageData>(FGameplayTags::Get().SprintAttackTag.GetTagName(), TEXT("SprintAttackLookup"));
+
+			if (RowData && SprintAbilityClass)
+			{
+				AbilitySystemComponent->TryActivateAbilityByClass(SprintAbilityClass, true);
+			}
+		}
+	}
+	// 2. Dash check
+	else if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().DashStateTag))
+	{
+		if (DT_Montages)
+		{
+			FMontageData* RowData = DT_Montages->FindRow<FMontageData>(FGameplayTags::Get().DashAttackTag.GetTagName(), TEXT("DashAttackLookup"));
+
+			if (RowData && DashAbilityClass)
+			{
+				AbilitySystemComponent->TryActivateAbilityByClass(DashAbilityClass, true);
+			}
+		}
+	}
+	// 3. Normal Attack
+	else
+	{
+		if (DT_NormalAttackCombo && NormalAttackAbilityClass)
+		{
+			FGameplayEventData Payload;
+			Payload.EventTag = FGameplayTags::Get().NormalAttackEventTag;
+			Payload.Instigator = this;
+			Payload.Target = this;
+
+			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, FGameplayTags::Get().NormalAttackEventTag, Payload);
+
+			AbilitySystemComponent->TryActivateAbilityByClass(NormalAttackAbilityClass, true);
+		}
+	}
+}
 
 TArray<FGameplayAbilitySpecHandle> ACharacterBase::GrantAbilities(TArray<TSubclassOf<UGameplayAbility>> AbilitiesToGrant)
 {
@@ -295,7 +354,6 @@ void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 bool ACharacterBase::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
-	// ∫Œ∏ ≈¨∑°Ω∫ »£√‚
 	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
 
 	if (AttributeSet)

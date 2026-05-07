@@ -23,7 +23,7 @@ class BOSSRUSH_API UArcherAttributeSet : public UBasicAttributeSet
 	GENERATED_BODY()
 public:
 	UArcherAttributeSet();
-
+ 
 public:
 	UPROPERTY(BlueprintReadOnly, Category = "AttackLevel", ReplicatedUsing = OnRep_AttackLevel)
 	FGameplayAttributeData AttackLevel;

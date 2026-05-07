@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
+#include "GameplayTagContainer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
@@ -17,6 +18,14 @@
 #include "GAS/AttributeSets/BasicAttributeSet.h"
 #include "Engine/DataTable.h"
 #include "CharacterBase.generated.h"
+
+class UGameplayAbility;
+class UAnimMontage;
+class UInputMappingContext;
+class UInputAction;
+class USpringArmComponent;
+class UCameraComponent;
+class UBasicAttributeSet;
 
 
 UENUM(BlueprintType)
@@ -34,7 +43,6 @@ struct FMontageList
 	GENERATED_BODY()
 
 public:
-	// 여러 개의 몽타주를 저장할 배열
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<UAnimMontage*> Montages;
 };
@@ -45,7 +53,6 @@ struct FCharacterAnimMontages
 	GENERATED_BODY()
 
 public:
-	// 상태(Key) - 몽타주(Value) 쌍으로 저장하는 Map
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	TMap<ECharacterState, FMontageList> MontageMap;
 };
@@ -60,7 +67,6 @@ class BOSSRUSH_API ACharacterBase : public ACharacter, public IAbilitySystemInte
 public:
 	ACharacterBase();
 
-	// [추가 1] IAbilitySystemInterface 필수 구현 함수
 	virtual class UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 
@@ -94,7 +100,7 @@ public:
 	UInputAction* NormalAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* SubAction; //우클릭으로 실행되는 액션
+	UInputAction* SubAction; 
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* UltraSkill;
@@ -149,7 +155,6 @@ protected:
 
 	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 
-	// [추가 2] ASC 컴포넌트 변수 선언
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	UAbilitySystemComponent* AbilitySystemComponent;
 	
@@ -187,9 +192,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Jump")
 	void BaseJump(const FInputActionValue& Value);
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "AttackAction")
-	void OnNormalAttackInput();
-
+	UFUNCTION(BlueprintCallable, Category = "AttackAction")
+	virtual void OnNormalAttackInput();
+	
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
 	TArray<FGameplayAbilitySpecHandle> GrantAbilities(TArray<TSubclassOf<UGameplayAbility>> AbilitiesToGrant);
 
@@ -202,6 +207,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Attribute")
 	UBasicAttributeSet* GetAttributeSet() const { return AttributeSet; }
+
+	/* --- Ability Classes --- */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
+	TSubclassOf<UGameplayAbility> SprintAbilityClass; 
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
+	TSubclassOf<UGameplayAbility> DashAbilityClass;  
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
+	TSubclassOf<UGameplayAbility> NormalAttackAbilityClass;
 
 protected:
 
