@@ -23,4 +23,10 @@ void FGameplayTags::InitializeNativeGameplayTags()
 
 	GameplayTags.AimingStateTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Character.State.Aiming"));
+
+	GameplayTags.NormalSkillEventTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Event.Attack.NormalSkill"));
+
+	GameplayTags.UltraSkillEventTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Event.Attack.UltraSkill"));
 }

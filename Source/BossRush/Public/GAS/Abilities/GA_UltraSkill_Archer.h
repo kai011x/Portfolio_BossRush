@@ -4,18 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "GAS/Abilities/GA_UltraSkill.h"
-#include "GA_UltraSkill_Fighter.generated.h"
+#include "GA_UltraSkill_Archer.generated.h"
 
 /**
- * Fighter 전용 궁극기
+ * Archer 전용 궁극기
  */
 UCLASS()
-class BOSSRUSH_API UGA_UltraSkill_Fighter : public UGA_UltraSkill
+class BOSSRUSH_API UGA_UltraSkill_Archer : public UGA_UltraSkill
 {
 	GENERATED_BODY()
 
 public:
-	UGA_UltraSkill_Fighter();
+	UGA_UltraSkill_Archer();
 
 protected:
 	virtual void ExecuteSkillLogic() override;

@@ -219,6 +219,12 @@ void ACharacterBase::StartSprint()
 		return;
 	}
 
+	// 이미 질주 중이면 중복 추가 방지
+	if (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().SprintStateTag))
+	{
+		return;
+	}
+
 	if (AttributeSet)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetSprintSpeed();
@@ -237,7 +243,7 @@ void ACharacterBase::StopSprint()
 		GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetRunSpeed();
 	}
 
-	if (AbilitySystemComponent)
+	if (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().SprintStateTag))
 	{
 		AbilitySystemComponent->RemoveLooseGameplayTag(FGameplayTags::Get().SprintStateTag);
 	}
@@ -254,36 +260,54 @@ void ACharacterBase::OnNormalAttackInput()
 		return;
 	}
 
-	// 1. Sprint check
+	if (HandleSprintAttack()) return;
+	if (HandleDashAttack()) return;
+	
+	HandleNormalComboAttack();
+}
+
+bool ACharacterBase::HandleSprintAttack()
+{
 	if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().SprintStateTag))
 	{
-		if (DT_Montages)
+		if (DT_Montages && !GetCurrentMontage())
 		{
 			FMontageData* RowData = DT_Montages->FindRow<FMontageData>(FGameplayTags::Get().SprintAttackTag.GetTagName(), TEXT("SprintAttackLookup"));
 
-			if (RowData && SprintAbilityClass)
+			if (RowData && SprintAttackAbilityClass)
 			{
-				AbilitySystemComponent->TryActivateAbilityByClass(SprintAbilityClass, true);
+				AbilitySystemComponent->TryActivateAbilityByClass(SprintAttackAbilityClass, true);
+				return true;
 			}
 		}
 	}
-	// 2. Dash check
-	else if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().DashStateTag))
+	return false;
+}
+
+bool ACharacterBase::HandleDashAttack()
+{
+	if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().DashStateTag))
 	{
-		if (DT_Montages)
+		if (DT_Montages && !GetCurrentMontage())
 		{
 			FMontageData* RowData = DT_Montages->FindRow<FMontageData>(FGameplayTags::Get().DashAttackTag.GetTagName(), TEXT("DashAttackLookup"));
 
-			if (RowData && DashAbilityClass)
+			if (RowData && DashAttackAbilityClass)
 			{
-				AbilitySystemComponent->TryActivateAbilityByClass(DashAbilityClass, true);
+				AbilitySystemComponent->TryActivateAbilityByClass(DashAttackAbilityClass, true);
+				return true;
 			}
 		}
 	}
-	// 3. Normal Attack
-	else
+	return false;
+}
+
+void ACharacterBase::HandleNormalComboAttack()
+{
+	if (DT_NormalAttackCombo && NormalAttackAbilityClass)
 	{
-		if (DT_NormalAttackCombo && NormalAttackAbilityClass)
+		FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromClass(NormalAttackAbilityClass);
+		if (Spec && Spec->IsActive())
 		{
 			FGameplayEventData Payload;
 			Payload.EventTag = FGameplayTags::Get().NormalAttackEventTag;
@@ -291,8 +315,13 @@ void ACharacterBase::OnNormalAttackInput()
 			Payload.Target = this;
 
 			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, FGameplayTags::Get().NormalAttackEventTag, Payload);
-
-			AbilitySystemComponent->TryActivateAbilityByClass(NormalAttackAbilityClass, true);
+		}
+		else
+		{
+			if (!GetCurrentMontage())
+			{
+				AbilitySystemComponent->TryActivateAbilityByClass(NormalAttackAbilityClass, true);
+			}
 		}
 	}
 }

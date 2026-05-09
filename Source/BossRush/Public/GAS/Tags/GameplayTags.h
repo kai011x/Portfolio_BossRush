@@ -22,6 +22,8 @@ public:
 	FGameplayTag DashAttackTag;
 	FGameplayTag NormalAttackEventTag;
 	FGameplayTag AimingStateTag;
+	FGameplayTag NormalSkillEventTag;
+	FGameplayTag UltraSkillEventTag;
 
 private:
 	static FGameplayTags GameplayTags;

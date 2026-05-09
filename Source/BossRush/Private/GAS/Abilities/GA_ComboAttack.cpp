@@ -82,12 +82,12 @@ void UGA_ComboAttack::PlayComboAction()
 
 	if (CurrentMontageTask)
 	{
-		CurrentMontageTask->OnBlendOut.RemoveDynamic(this, &UGA_ComboAttack::OnMontageCompleted);
-		CurrentMontageTask->OnInterrupted.RemoveDynamic(this, &UGA_ComboAttack::OnMontageCompleted);
-		CurrentMontageTask->OnCancelled.RemoveDynamic(this, &UGA_ComboAttack::OnMontageCompleted);
+		CurrentMontageTask->OnCompleted.RemoveAll(this);
+		CurrentMontageTask->OnBlendOut.RemoveAll(this);
+		CurrentMontageTask->OnInterrupted.RemoveAll(this);
+		CurrentMontageTask->OnCancelled.RemoveAll(this);
 		CurrentMontageTask = nullptr;
 	}
-
 
 	bNextInputPressed = false;
 
@@ -97,14 +97,16 @@ void UGA_ComboAttack::PlayComboAction()
 		MontageToPlay,
 		CurrentAction->PlayRate
 	);
-	
+
 	CurrentMontageTask = MontageTask;
-	
-	// ��������Ʈ ����
+
+	// 델리게이트 바인딩 (OnCompleted 추가)
+	MontageTask->OnCompleted.AddDynamic(this, &UGA_ComboAttack::OnMontageCompleted);
 	MontageTask->OnBlendOut.AddDynamic(this, &UGA_ComboAttack::OnMontageCompleted);
 	MontageTask->OnInterrupted.AddDynamic(this, &UGA_ComboAttack::OnMontageCompleted);
 	MontageTask->OnCancelled.AddDynamic(this, &UGA_ComboAttack::OnMontageCompleted);
 	MontageTask->ReadyForActivation();
+
 	
 	
 	UAbilityTask_WaitGameplayEvent* CheckWaitTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(

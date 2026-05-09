@@ -3,19 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GAS/Abilities/GA_UltraSkill.h"
-#include "GA_UltraSkill_Fighter.generated.h"
+#include "GAS/Abilities/GA_NormalSkill.h"
+#include "GA_NormalSkill_Archer.generated.h"
 
 /**
- * Fighter 전용 궁극기
+ * Archer 전용 일반 스킬
  */
 UCLASS()
-class BOSSRUSH_API UGA_UltraSkill_Fighter : public UGA_UltraSkill
+class BOSSRUSH_API UGA_NormalSkill_Archer : public UGA_NormalSkill
 {
 	GENERATED_BODY()
 
 public:
-	UGA_UltraSkill_Fighter();
+	UGA_NormalSkill_Archer();
 
 protected:
 	virtual void ExecuteSkillLogic() override;

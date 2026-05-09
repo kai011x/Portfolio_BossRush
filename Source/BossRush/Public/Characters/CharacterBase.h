@@ -191,11 +191,18 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Jump")
 	void BaseJump(const FInputActionValue& Value);
+UFUNCTION(BlueprintCallable, Category = "AttackAction")
+virtual void OnNormalAttackInput();
 
-	UFUNCTION(BlueprintCallable, Category = "AttackAction")
-	virtual void OnNormalAttackInput();
-	
-	UFUNCTION(BlueprintCallable, Category = "Abilities")
+protected:
+// --- 공격 타입별 헬퍼 함수 ---
+virtual bool HandleSprintAttack();
+virtual bool HandleDashAttack();
+virtual void HandleNormalComboAttack();
+
+public:
+UFUNCTION(BlueprintCallable, Category = "Abilities")
+
 	TArray<FGameplayAbilitySpecHandle> GrantAbilities(TArray<TSubclassOf<UGameplayAbility>> AbilitiesToGrant);
 
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
@@ -210,10 +217,10 @@ public:
 
 	/* --- Ability Classes --- */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
-	TSubclassOf<UGameplayAbility> SprintAbilityClass; 
+	TSubclassOf<UGameplayAbility> SprintAttackAbilityClass; 
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
-	TSubclassOf<UGameplayAbility> DashAbilityClass;  
+	TSubclassOf<UGameplayAbility> DashAttackAbilityClass;  
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
 	TSubclassOf<UGameplayAbility> NormalAttackAbilityClass;
