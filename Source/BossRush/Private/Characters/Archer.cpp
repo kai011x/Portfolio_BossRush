@@ -3,6 +3,8 @@
 
 #include "Characters/Archer.h"
 #include "Characters/Weapons/CArrow.h"
+#include "Characters/Weapons/ACRope.h"
+#include "Components/RopeActionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GAS/Tags/GameplayTags.h"
@@ -10,9 +12,11 @@
 #include "ActionDatas.h"
 #include "Net/UnrealNetwork.h"
 #include "Abilities/GameplayAbilityTargetActor.h"
+#include "Blueprint/UserWidget.h"
 
 AArcher::AArcher()
 {
+	RopeActionComponent = CreateDefaultSubobject<URopeActionComponent>(TEXT("RopeActionComponent"));
 }
 
 void AArcher::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -60,12 +64,35 @@ void AArcher::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	UpdateCameraZoom(DeltaTime);
+
 	// AbilitySystemComponent에서 AimingStateTag 존재 여부 확인
 	bool bIsAiming = AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().AimingStateTag);
 
-	float TargetLength = bIsAiming ? AimArmLength : DefaultArmLength;
-	float TargetFOV = bIsAiming ? AimFOV : DefaultFOV;
-	FVector TargetOffset = bIsAiming ? AimSocketOffset : DefaultSocketOffset;
+	// 조준 상태가 아니면 현재 장착된 화살을 숨김
+	if (CurrentArrow)
+	{
+		CurrentArrow->SetActorHiddenInGame(!bIsAiming);
+	}
+}
+
+void AArcher::UpdateCameraZoom(float DeltaTime)
+{
+	if (!AbilitySystemComponent) return;
+
+	// 1. 조준 중(일반/로프)인지 확인
+	bool bIsAiming = AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().AimingStateTag) ||
+		AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().RopeAimStateTag);
+
+	// 2. 현재 로프 이동 중(Action)인지 확인
+	bool bIsRopeMoving = AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().RopeActionStateTag);
+
+	// 로프 이동 중에는 조준 중이더라도 카메라를 축소함 (시야 확보)
+	bool bShouldZoom = bIsAiming && !bIsRopeMoving;
+
+	float TargetLength = bShouldZoom ? AimArmLength : DefaultArmLength;
+	float TargetFOV = bShouldZoom ? AimFOV : DefaultFOV;
+	FVector TargetOffset = bShouldZoom ? AimSocketOffset : DefaultSocketOffset;
 
 	if (CameraBoom)
 	{
@@ -76,12 +103,6 @@ void AArcher::Tick(float DeltaTime)
 	if (FollowCamera)
 	{
 		FollowCamera->FieldOfView = FMath::FInterpTo(FollowCamera->FieldOfView, TargetFOV, DeltaTime, AimInterpSpeed);
-	}
-
-	// 조준 상태가 아니면 현재 장착된 화살을 숨김
-	if (CurrentArrow)
-	{
-		CurrentArrow->SetActorHiddenInGame(!bIsAiming);
 	}
 }
 
@@ -94,6 +115,14 @@ void AArcher::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AArcher::StartAim()
 {
+	if (!AbilitySystemComponent) return;
+
+	// [추가] 로프 조준 중이면 일반 조준 불가
+	if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().RopeAimStateTag))
+	{
+		return;
+	}
+
 	StopSprint();
 
 	if (HasAuthority())
@@ -104,6 +133,16 @@ void AArcher::StartAim()
 	if (CurrentArrow)
 	{
 		CurrentArrow->SetActorHiddenInGame(false);
+	}
+
+	// 일반 조준 위젯 표시
+	if (IsLocallyControlled() && AimWidgetClass && !CurrentAimWidget)
+	{
+		CurrentAimWidget = CreateWidget<UUserWidget>(GetWorld(), AimWidgetClass);
+		if (CurrentAimWidget)
+		{
+			CurrentAimWidget->AddToViewport();
+		}
 	}
 
 	if (AbilitySystemComponent)
@@ -146,6 +185,13 @@ void AArcher::StopAim()
 		CurrentArrow->SetActorHiddenInGame(true);
 	}
 
+	// 일반 조준 위젯 제거
+	if (CurrentAimWidget)
+	{
+		CurrentAimWidget->RemoveFromParent();
+		CurrentAimWidget = nullptr;
+	}
+
 	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->RemoveLooseGameplayTag(FGameplayTags::Get().AimingStateTag);
@@ -159,6 +205,31 @@ void AArcher::StopAim()
 		{
 			PC->PlayerCameraManager->ViewPitchMin = -89.9f;
 			PC->PlayerCameraManager->ViewPitchMax = 89.9f;
+		}
+	}
+}
+
+void AArcher::SetRopeAimWidgetVisible(bool bVisible)
+{
+	if (!IsLocallyControlled()) return;
+
+	if (bVisible)
+	{
+		if (RopeAimWidgetClass && !CurrentRopeAimWidget)
+		{
+			CurrentRopeAimWidget = CreateWidget<UUserWidget>(GetWorld(), RopeAimWidgetClass);
+			if (CurrentRopeAimWidget)
+			{
+				CurrentRopeAimWidget->AddToViewport();
+			}
+		}
+	}
+	else
+	{
+		if (CurrentRopeAimWidget)
+		{
+			CurrentRopeAimWidget->RemoveFromParent();
+			CurrentRopeAimWidget = nullptr;
 		}
 	}
 }
@@ -267,4 +338,16 @@ AGameplayAbilityTargetActor* AArcher::GetOrCreateTargetActor()
 	}
 
 	return TargetActor;
+}
+
+void AArcher::SetAimTargetLocation(const FVector& InLocation)
+{
+	AimTargetLocation = InLocation;
+	bHasAimTarget = true;
+}
+
+void AArcher::ClearAimTarget()
+{
+	AimTargetLocation = FVector::ZeroVector;
+	bHasAimTarget = false;
 }

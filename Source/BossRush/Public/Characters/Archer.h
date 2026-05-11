@@ -43,17 +43,38 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GAS")
 	AGameplayAbilityTargetActor* GetOrCreateTargetActor();
 
-	ACArrow* GetArrowFromPool();
+	void SetAimTargetLocation(const FVector& InLocation);
+	void ClearAimTarget();
 
-	void SetAimTargetLocation(const FVector& InLocation) { AimTargetLocation = InLocation; bHasAimTarget = true; }
-	void ClearAimTarget() { bHasAimTarget = false; }
+	// 위젯 제어 함수
+	void SetRopeAimWidgetVisible(bool bVisible);
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "UI")
+	void OnUpdateRopeAimUI(bool bValid, FVector Location);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	class UUserWidget* CurrentAimWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	class UUserWidget* CurrentRopeAimWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class URopeActionComponent* RopeActionComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* AttackMontage;
 
+	ACArrow* GetArrowFromPool();
+
 private:
 	FVector AimTargetLocation;
 	bool bHasAimTarget = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class UUserWidget> AimWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class UUserWidget> RopeAimWidgetClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<AGameplayAbilityTargetActor> TargetActorClass;
@@ -101,4 +122,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
 	TSubclassOf<UGameplayAbility> AimAttackAbilityClass;
+
+protected:
+	void UpdateCameraZoom(float DeltaTime);
 };

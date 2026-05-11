@@ -29,4 +29,10 @@ void FGameplayTags::InitializeNativeGameplayTags()
 
 	GameplayTags.UltraSkillEventTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Event.Attack.UltraSkill"));
+
+	GameplayTags.RopeAimStateTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Character.State.Rope.Aim"));
+
+	GameplayTags.RopeActionStateTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Character.State.Rope.Action"));
 }

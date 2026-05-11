@@ -25,6 +25,9 @@ public:
 	FGameplayTag NormalSkillEventTag;
 	FGameplayTag UltraSkillEventTag;
 
+	FGameplayTag RopeAimStateTag;
+	FGameplayTag RopeActionStateTag;
+
 private:
 	static FGameplayTags GameplayTags;
 };
