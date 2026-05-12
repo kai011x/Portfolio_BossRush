@@ -145,6 +145,10 @@ public:
 	UBasicAttributeSet* AttributeSet;
 
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TArray<class UShapeComponent*> CollisionShapes;
+
+protected:
 	virtual void BeginPlay() override;
 
 	virtual void PossessedBy(AController* NewController) override;
@@ -228,6 +232,9 @@ UFUNCTION(BlueprintCallable, Category = "Abilities")
 protected:
 
 	virtual void NotifyControllerChanged() override;
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void SetCollisionShapesEnabled(bool bEnabled);
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

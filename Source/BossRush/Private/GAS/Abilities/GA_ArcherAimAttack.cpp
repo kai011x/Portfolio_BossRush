@@ -5,11 +5,12 @@
 #include "Characters/Archer.h"
 #include "Abilities/Tasks/AbilityTask_WaitTargetData.h"
 #include "Abilities/GameplayAbilityTargetActor.h"
+#include "GAS/Tags/GameplayTags.h"
 
 UGA_ArcherAimAttack::UGA_ArcherAimAttack()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
-	ActivationBlockedTags.AddTag(FMyGameplayTags::Get().RopeAimStateTag);
+	ActivationBlockedTags.AddTag(FGameplayTags::Get().RopeAimStateTag);
 }
 
 void UGA_ArcherAimAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

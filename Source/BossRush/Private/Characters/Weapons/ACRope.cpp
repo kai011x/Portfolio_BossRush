@@ -6,6 +6,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Characters/CharacterBase.h"
+
 #include "Kismet/KismetMathLibrary.h"
 
 ACRope::ACRope()
@@ -116,7 +117,8 @@ void ACRope::UpdateRope(float DeltaTime)
 
 void ACRope::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor == GetOwner() || !bIsActive || bIsAttached) return;
+	if (OtherActor == GetOwner()||!bIsActive || bIsAttached) return;
+
 
 	// 부착 성공
 	bIsAttached = true;

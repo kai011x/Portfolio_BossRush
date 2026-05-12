@@ -47,6 +47,21 @@ void URopeActionComponent::BeginPlay()
 	}
 }
 
+void URopeActionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (OwnerCharacter)
+	{
+		UAbilitySystemComponent* ASC = OwnerCharacter->GetAbilitySystemComponent();
+		if (ASC)
+		{
+			// 컴포넌트 종료 시 태그 확실히 제거
+			ASC->SetLooseGameplayTagCount(FGameplayTags::Get().RopeActionStateTag, 0);
+		}
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void URopeActionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -174,27 +189,31 @@ void URopeActionComponent::FinishAiming()
 	UAbilitySystemComponent* ASC = OwnerCharacter->GetAbilitySystemComponent();
 	if (!ASC) return;
 
-	// 1. 조준 상태 태그 명시적 제거 (조준 UI 종료)
-	ASC->RemoveLooseGameplayTag(FGameplayTags::Get().RopeAimStateTag);
-
-	// 2. UI 즉시 제거 (RemoveFromParent 실행)
-	if (AArcher* Archer = Cast<AArcher>(OwnerCharacter))
+	// [직접 종료 방식] 현재 활성화된 로프 조준 어빌리티를 클래스로 직접 찾아 취소합니다.
+	if (AimAbilityClass)
 	{
-		Archer->SetRopeAimWidgetVisible(false);
+		const TArray<FGameplayAbilitySpec>& Specs = ASC->GetActivatableAbilities();
+		for (const FGameplayAbilitySpec& Spec : Specs)
+		{
+			if (Spec.Ability && Spec.Ability->GetClass()->IsChildOf(AimAbilityClass) && Spec.IsActive())
+			{
+				ASC->CancelAbilityHandle(Spec.Handle);
+			}
+		}
 	}
 
-	// 3. 조준 어빌리티 종료
-	FGameplayTagContainer AimTags;
-	AimTags.AddTag(FGameplayTags::Get().RopeAimStateTag);
-	ASC->CancelAbilities(&AimTags);
-
-	// 4. 조준 성공 시 액션 단계 진입
+	// 2. 조준 성공 시 액션 단계 진입
 	if (bIsTargetValid)
 	{
 		ExecuteRopeAction();
 	}
 	else
 	{
+		// 조준 실패 시 정리
+		if (AArcher* Archer = Cast<AArcher>(OwnerCharacter))
+		{
+			Archer->SetRopeAimWidgetVisible(false);
+		}
 		SetComponentTickEnabled(false);
 	}
 }
@@ -222,10 +241,6 @@ void URopeActionComponent::ExecuteRopeAction()
 	{
 		OwnerCharacter->PlayAnimMontage(FireMontage);
 	}
-	else
-	{
-		FireRope();
-	}
 }
 
 void URopeActionComponent::FireRope()
@@ -244,13 +259,19 @@ void URopeActionComponent::OnRopeAttached()
 
 	Rope->OnRopeAttached.RemoveDynamic(this, &URopeActionComponent::OnRopeAttached);
 
-	// [중요] 실제 갈고리가 박힌 위치로 타겟 업데이트
+	// 실제 갈고리가 박힌 위치로 타겟 업데이트
 	TargetLocation = Rope->GetActorLocation();
 
-	// [중요] 이동을 위해 틱을 강제로 활성화
-	SetComponentTickEnabled(true);
+	// [방어 코드] 부착된 위치가 너무 가까우면 이동을 시작하지 않고 즉시 종료
+	float DistanceToTarget = FVector::Dist(OwnerCharacter->GetActorLocation(), TargetLocation);
+	if (DistanceToTarget <= StopDistance)
+	{
+		FinishMovement();
+		return;
+	}
 
-	// 이동 물리 시작
+	// 이동을 위해 틱 활성화 및 물리 모드 변경
+	SetComponentTickEnabled(true);
 	OwnerCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 	
 	if (MoveMontage)

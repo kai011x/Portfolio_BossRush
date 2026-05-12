@@ -58,7 +58,7 @@ public:
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Settings")
-	float ThrowSpeed = 3000.0f;
+	float ThrowSpeed = 5000.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Settings")
 	float MaxDistance = 4000.0f;

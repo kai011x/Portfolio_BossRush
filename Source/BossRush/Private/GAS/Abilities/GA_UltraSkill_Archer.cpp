@@ -7,7 +7,7 @@
 
 UGA_UltraSkill_Archer::UGA_UltraSkill_Archer()
 {
-	SkillRowName = TEXT("UltSkill");
+
 }
 
 void UGA_UltraSkill_Archer::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -21,7 +21,7 @@ void UGA_UltraSkill_Archer::ActivateAbility(const FGameplayAbilitySpecHandle Han
 	ACharacterBase* Character = Cast<ACharacterBase>(GetAvatarActorFromActorInfo());
 	if (Character && Character->DT_Skills)
 	{
-		FMontageData* FoundRow = Character->DT_Skills->FindRow<FMontageData>(SkillRowName, TEXT("Find Skill in GA_UltraSkill_Archer"));
+		FActionData* FoundRow = Character->DT_Skills->FindRow<FActionData>(SkillRowName, TEXT("Find Skill in GA_UltraSkill_Archer"));
 		if (FoundRow)
 		{
 			SkillMontage = FoundRow->Montage;

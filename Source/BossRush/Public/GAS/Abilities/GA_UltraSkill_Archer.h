@@ -17,8 +17,7 @@ class BOSSRUSH_API UGA_UltraSkill_Archer : public UGA_UltraSkill
 public:
 	UGA_UltraSkill_Archer();
 
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-
+	void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 protected:
 	virtual void ExecuteSkillLogic() override;
 };

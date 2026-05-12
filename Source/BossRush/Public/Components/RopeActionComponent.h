@@ -22,6 +22,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 	// 제어 인터페이스
@@ -41,7 +42,7 @@ public:
 	void SetTargetLocation(const FVector& InLocation) { TargetLocation = InLocation; bIsTargetValid = true; }
 	FVector GetTargetLocation() const { return TargetLocation; }
 	bool IsTargetValid() const { return bIsTargetValid; }
-
+	void FinishMovement();    // 이동 완료 및 Tick 종료
 protected:
 	UFUNCTION()
 	void OnRopeAttached();
@@ -51,7 +52,7 @@ private:
 	void UpdateMovementLogic(float DeltaTime);
 	
 	void ExecuteRopeAction(); // 발사 및 이동 시작
-	void FinishMovement();    // 이동 완료 및 Tick 종료
+
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rope")

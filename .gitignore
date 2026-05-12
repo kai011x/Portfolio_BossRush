@@ -8,6 +8,8 @@ Saved/
 .vscode/
 .vs/
 GEMINI.md
+Content.zip
+working.txt
 
 # 에셋(Content) 폴더 안에서도 필요한 경우 제외
 Content/**/*

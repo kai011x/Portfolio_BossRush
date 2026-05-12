@@ -11,7 +11,7 @@ UGA_RopeAim::UGA_RopeAim()
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	
 	AbilityTags.AddTag(FGameplayTags::Get().RopeAimStateTag);
-	AtivationOwnedTags.AddTag(FGameplayTags::Get().RopeAimStateTag);
+	ActivationOwnedTags.AddTag(FGameplayTags::Get().RopeAimStateTag);
 
 	
 	ActivationBlockedTags.AddTag(FGameplayTags::Get().AimingStateTag);

@@ -5,6 +5,7 @@
 #include "Characters/Weapons/CArrow.h"
 #include "Characters/Weapons/ACRope.h"
 #include "Components/RopeActionComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GAS/Tags/GameplayTags.h"
@@ -17,6 +18,13 @@
 AArcher::AArcher()
 {
 	RopeActionComponent = CreateDefaultSubobject<URopeActionComponent>(TEXT("RopeActionComponent"));
+
+	RightFootSphere = CreateDefaultSubobject<USphereComponent>(TEXT("RightFootSphere"));
+	RightFootSphere->SetupAttachment(GetMesh(), TEXT("foot_r"));
+	RightFootSphere->SetSphereRadius(10.0f);
+	RightFootSphere->SetCollisionProfileName(TEXT("NoCollision"));
+
+	CollisionShapes.Add(RightFootSphere);
 }
 
 void AArcher::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

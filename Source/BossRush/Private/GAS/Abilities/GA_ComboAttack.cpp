@@ -4,6 +4,7 @@
 #include "GAS/Abilities/GA_ComboAttack.h"
 #include "Characters/CharacterBase.h"
 #include "ActionDatas.h"
+#include "GAS\Tags\GameplayTags.h"
 #include "Animation/AnimMontage.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
@@ -11,6 +12,8 @@
 UGA_ComboAttack::UGA_ComboAttack()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
+	ActivationBlockedTags.AddTag(FGameplayTags::Get().RopeAimStateTag);
+	ActivationBlockedTags.AddTag(FGameplayTags::Get().RopeActionStateTag);
 	CurrentComboIndex = 0;
 	bNextInputPressed = false;
 }

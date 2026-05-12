@@ -30,7 +30,7 @@ public:
 	float PlayRate = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	bool bCanMove = true;
+	bool bCanStop = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	bool bFixedCamera;
@@ -68,22 +68,7 @@ public:
 	float GroggyRate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	float Launch = 100;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	float StopTime = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	class USoundWave* Sound = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	class UFXSystemAsset* Effect = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	FVector EffectLocation = FVector::ZeroVector;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	FVector EffectScale = FVector::OneVector;
+	float Launch = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	FVector HitLocation = FVector::ZeroVector;

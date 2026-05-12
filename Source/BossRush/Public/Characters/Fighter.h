@@ -14,5 +14,16 @@ class BOSSRUSH_API AFighter : public ACharacterBase
 {
 	GENERATED_BODY()
 	
+public:
+	AFighter();
 
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* RightHandSphere;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* LeftHandSphere;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* RightFootSphere;
 };

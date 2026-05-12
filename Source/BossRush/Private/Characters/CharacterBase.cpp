@@ -19,6 +19,8 @@
 #include "GAS/Tags/GameplayTags.h"
 #include "ActionDatas.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/ShapeComponent.h"
+#include "Components/SphereComponent.h"
 
 
 
@@ -50,7 +52,7 @@ ACharacterBase::ACharacterBase()
 	// instead of recompiling to adjust them
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
@@ -172,11 +174,13 @@ void ACharacterBase::NotifyControllerChanged()
 
 void ACharacterBase::Move(const FInputActionValue& Value)
 {
-	if (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag("Event.BlockInput")))
+	if (!AbilitySystemComponent) return;
+
+	if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag("Event.BlockInput")) ||
+		AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().RopeActionStateTag))
 	{
 		return;
 	}
-
 
 	CurrentInputVector = Value.Get<FVector2D>();
 
@@ -372,6 +376,24 @@ void ACharacterBase::SendAbilitiesChangedEvent()
 
 	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, EventData.EventTag, EventData);
 
+}
+
+void ACharacterBase::SetCollisionShapesEnabled(bool bEnabled)
+{
+	for (UShapeComponent* Shape : CollisionShapes)
+	{
+		if (Shape)
+		{
+			if (bEnabled)
+			{
+				Shape->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			}
+			else
+			{
+				Shape->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+		}
+	}
 }
 
 void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
