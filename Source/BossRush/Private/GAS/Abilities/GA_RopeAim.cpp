@@ -10,7 +10,9 @@ UGA_RopeAim::UGA_RopeAim()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	
-	AbilityTags.AddTag(FGameplayTags::Get().RopeAimStateTag);
+	// CancelAbilities 대응을 위해 AbilityTags에 태그 설정
+	SetAssetTags(FGameplayTagContainer(FGameplayTags::Get().RopeAimStateTag));
+
 	ActivationOwnedTags.AddTag(FGameplayTags::Get().RopeAimStateTag);
 
 	

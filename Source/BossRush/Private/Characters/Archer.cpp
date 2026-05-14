@@ -269,7 +269,7 @@ void AArcher::OnNormalAttackInput()
 	HandleNormalComboAttack();
 }
 
-void AArcher::DrawArrow()
+void AArcher::DrawArrow(EHitType HitType, float Multiplier, int32 HitIdx, float LaunchDistance, float LaunchHeight)
 {
 	if (!HasAuthority()) return;
 
@@ -280,6 +280,7 @@ void AArcher::DrawArrow()
 	if (CurrentArrow)
 	{
 		CurrentArrow->Prepare();
+		CurrentArrow->SetAttackData(DamageEffectClass, Multiplier, HitType, HitIdx, LaunchDistance, LaunchHeight);
 		
 		CurrentArrow->SetActorHiddenInGame(false);
 

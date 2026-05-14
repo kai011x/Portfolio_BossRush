@@ -12,7 +12,7 @@ void UAN_DrawArrow::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* 
 	{
 		if (AArcher* Archer = Cast<AArcher>(MeshComp->GetOwner()))
 		{
-			Archer->DrawArrow();
+			Archer->DrawArrow(HitType, DamageMultiplier, HitIdx, LaunchDistance, LaunchHeight);
 		}
 	}
 }

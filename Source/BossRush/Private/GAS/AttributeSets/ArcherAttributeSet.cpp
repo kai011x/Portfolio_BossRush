@@ -14,7 +14,7 @@ UArcherAttributeSet::UArcherAttributeSet()
 	Resource = 0.0f;
 	MaxResource = 100.f;
 
-	RunSpeed = 700.f;
+	RunSpeed = 600.f;
 	SprintSpeed = 950.f;
 	AttackLevel = 1.f;
 
@@ -24,7 +24,7 @@ UArcherAttributeSet::UArcherAttributeSet()
 
 	Defense = 12.0f;
 	Attack = 50.0f;
-	Critical = 0.15f; // 15% Å©¸®Æ¼ÄÃ È®·ü
+	Critical = 0.15f; // 15% Å©ï¿½ï¿½Æ¼ï¿½ï¿½ È®ï¿½ï¿½
 
 	DashStrength = 1500.0f;
 }

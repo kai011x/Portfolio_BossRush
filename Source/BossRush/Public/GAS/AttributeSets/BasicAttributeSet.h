@@ -35,6 +35,15 @@ public:
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, MaxHealth);
 
+	//Groggy Attributes
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MaxGroggy)
+	FGameplayAttributeData MaxGroggy;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, MaxGroggy);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Groggy)
+	FGameplayAttributeData Groggy;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, Groggy);
+
 	//Stamina Attributes
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Stamina)
 	FGameplayAttributeData Stamina;
@@ -69,12 +78,16 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Attack", ReplicatedUsing = OnRep_Attack)
 	FGameplayAttributeData Attack;
 	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, Attack);
-
+	
 	UPROPERTY(BlueprintReadOnly, Category = "Critical", ReplicatedUsing = OnRep_Critical)
 	FGameplayAttributeData Critical;
 	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, Critical);
+	
+	// Meta Attributes
+	UPROPERTY(BlueprintReadOnly, Category = "Damage")
+	FGameplayAttributeData Damage;
+	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, Damage);
 
-	// ÀÌµ¿ ¼Óµµ´Â °ªÀÌ ¹Ù²î¸é ½ÇÁ¦ ¹«ºê¸ÕÆ® ÄÄÆ÷³ÍÆ®¿¡ Àû¿ëÇØ¾ß ÇÏ¹Ç·Î OnRep ÇÊ¼ö
 	UPROPERTY(BlueprintReadOnly, Category = "Speed", ReplicatedUsing = OnRep_RunSpeed)
 	FGameplayAttributeData RunSpeed;
 	ATTRIBUTE_ACCESSORS(UBasicAttributeSet, RunSpeed);
@@ -131,7 +144,7 @@ public:
 	UFUNCTION()
 	void OnRep_MaxDashCount(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, MaxDashCount, OldValue); }
 
-	// [Ãß°¡] ±âÅ¸ ½ºÅÈ¿ë OnRep
+	// [ï¿½ß°ï¿½] ï¿½ï¿½Å¸ ï¿½ï¿½ï¿½È¿ï¿½ OnRep
 	UFUNCTION()
 	void OnRep_Defense(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, Defense, OldValue); }
 
@@ -150,7 +163,11 @@ public:
 	UFUNCTION()
 	void OnRep_Critical(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, Critical, OldValue); }
 
+	UFUNCTION()
+	void OnRep_MaxGroggy(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, MaxGroggy, OldValue); }
 
+	UFUNCTION()
+	void OnRep_Groggy(const FGameplayAttributeData& OldValue) const { GAMEPLAYATTRIBUTE_REPNOTIFY(UBasicAttributeSet, Groggy, OldValue); }
 
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

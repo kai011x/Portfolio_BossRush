@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "ActionDatas.h"
 #include "CArrow.generated.h"
 
 class UStaticMeshComponent;
@@ -37,6 +38,16 @@ public:
 
 	FORCEINLINE bool IsInUse() const { return bInUse; }
 
+	void SetAttackData(TSubclassOf<class UGameplayEffect> InEffectClass, float InMultiplier, EHitType InHitType, int32 InHitIdx = 0, float InLaunchDistance = 0.0f, float InLaunchHeight = 0.0f)
+	{
+		DamageEffectClass = InEffectClass;
+		DamageMultiplier = InMultiplier;
+		HitType = InHitType;
+		HitIdx = InHitIdx;
+		LaunchDistance = InLaunchDistance;
+		LaunchHeight = InLaunchHeight;
+	}
+
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USphereComponent* Sphere;
@@ -50,10 +61,22 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Settings")
 	float LifeTime = 3.f;
 
-private:
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+protected:
+	UPROPERTY()
+	TSubclassOf<class UGameplayEffect> DamageEffectClass;
 
+	float DamageMultiplier = 1.0f;
+	EHitType HitType = EHitType::None;
+	int32 HitIdx = 0;
+	float LaunchDistance = 0.0f;
+	float LaunchHeight = 0.0f;
+
+	UFUNCTION()
+	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	TArray<AActor*> AlreadyHitActors;
+
+private:
 	FTimerHandle DeactivateTimerHandle;
 	bool bInUse = false;
 

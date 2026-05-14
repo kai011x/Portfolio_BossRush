@@ -2,9 +2,14 @@
 
 
 #include "Characters/Weapons/CArrow.h"
+#include "GAS/Tags/GameplayTags.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemInterface.h"
+#include "GameplayTagContainer.h"
+#include "Characters/CharacterBase.h"
 
 // Sets default values
 ACArrow::ACArrow()
@@ -111,6 +116,47 @@ void ACArrow::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 {
 	if (OtherActor && OtherActor != this && OtherActor != GetOwner())
 	{
+		if (HasAuthority())
+		{
+			if (IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(OtherActor))
+			{
+				UAbilitySystemComponent* TargetASC = TargetInterface->GetAbilitySystemComponent();
+				if (TargetASC && DamageEffectClass)
+				{
+					// 발사한 캐릭터(Owner)의 ASC 가져오기
+					UAbilitySystemComponent* SourceASC = nullptr;
+					if (IAbilitySystemInterface* SourceInterface = Cast<IAbilitySystemInterface>(GetOwner()))
+					{
+						SourceASC = SourceInterface->GetAbilitySystemComponent();
+					}
+
+					if (SourceASC)
+					{
+						FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
+						ContextHandle.AddInstigator(GetOwner(), this);
+						ContextHandle.AddHitResult(Hit);
+
+						FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, 1.0f, ContextHandle);
+						if (SpecHandle.IsValid())
+						{
+							// 공격 배율 전달
+							SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTags::Get().DamageMultiplierDataTag, DamageMultiplier);
+
+							// HitType 정보를 태그로 추가
+							FString TypeTagString = FString::Printf(TEXT("Effect.HitType.%d"), (int32)HitType);
+							SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*TypeTagString));
+
+							// HitIdx 정보를 태그로 추가
+							FString IdxTagString = FString::Printf(TEXT("Effect.HitIdx.%d"), HitIdx);
+							SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*IdxTagString));
+
+							SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+						}
+					}
+				}
+			}
+		}
+
 		Deactivate();
 	}
 }

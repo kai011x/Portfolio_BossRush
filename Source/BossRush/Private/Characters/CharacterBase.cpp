@@ -21,15 +21,28 @@
 #include "Net/UnrealNetwork.h"
 #include "Components/ShapeComponent.h"
 #include "Components/SphereComponent.h"
+#include "GAS/Effects/GE_Damage.h"
+#include "Components/TargetingComponent.h"
+#include "Components/WidgetComponent.h"
 
-
-
+#include "Kismet/KismetSystemLibrary.h"
 
 // Sets default values
 ACharacterBase::ACharacterBase()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	TargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComponent"));
+	
+	TargetWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("TargetWidget"));
+	TargetWidget->SetupAttachment(GetMesh(), TEXT("spine_03"));
+	TargetWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	TargetWidget->SetDrawAtDesiredSize(true);
+	TargetWidget->SetVisibility(false);
+
+	// 데미지 이펙트 기본값 설정
+	DamageEffectClass = UGE_Damage::StaticClass();
 
 	// Add the ability system component
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
@@ -50,7 +63,7 @@ ACharacterBase::ACharacterBase()
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
-	GetCharacterMovement()->JumpZVelocity = 700.f;
+	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
@@ -62,6 +75,7 @@ ACharacterBase::ACharacterBase()
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	CameraBoom->SocketOffset = FVector(0.0f, 0.0f, 100.0f); // 카메라를 약간 위로 올림
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -81,6 +95,90 @@ void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	for (UShapeComponent* Shape : CollisionShapes)
+	{
+		if (Shape)
+		{
+			Shape->OnComponentBeginOverlap.AddDynamic(this, &ACharacterBase::OnAttackOverlapBegin);
+			Shape->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
+}
+
+void ACharacterBase::SetCollisionShapesEnabled(bool bEnabled, EHitType HitType, float Multiplier, int32 HitIdx, float LaunchDistance, float LaunchHeight)
+{
+	CurrentHitType = HitType;
+	CurrentHitIdx = HitIdx;
+	CurrentLaunchDistance = LaunchDistance;
+	CurrentLaunchHeight = LaunchHeight;
+	CurrentDamageMultiplier = Multiplier;
+
+	if (bEnabled)
+	{
+		AlreadyHitActors.Empty();
+	}
+
+	for (UShapeComponent* Shape : CollisionShapes)
+	{
+		if (Shape)
+		{
+			if (bEnabled)
+			{
+				Shape->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			}
+			else
+			{
+				Shape->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+		}
+	}
+}
+
+void ACharacterBase::OnAttackOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor == this || AlreadyHitActors.Contains(OtherActor)) return;
+
+	AlreadyHitActors.Add(OtherActor);
+
+	if (IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(OtherActor))
+	{
+		UAbilitySystemComponent* TargetASC = TargetInterface->GetAbilitySystemComponent();
+		if (TargetASC && AbilitySystemComponent && DamageEffectClass)
+		{
+			FGameplayEffectContextHandle ContextHandle = AbilitySystemComponent->MakeEffectContext();
+			ContextHandle.AddInstigator(this, this);
+			ContextHandle.AddHitResult(SweepResult);
+
+			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DamageEffectClass, 1.0f, ContextHandle);
+			if (SpecHandle.IsValid())
+			{
+				// 공격 배율을 SetByCaller로 전달
+				SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTags::Get().DamageMultiplierDataTag, CurrentDamageMultiplier);
+
+				// HitType 정보를 태그로 추가 (예: Effect.HitType.Light)
+				FString TypeTagString = FString::Printf(TEXT("Effect.HitType.%d"), (int32)CurrentHitType);
+				SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*TypeTagString));
+
+				// HitIdx 정보를 태그로 추가 (예: Effect.HitIdx.1)
+				FString IdxTagString = FString::Printf(TEXT("Effect.HitIdx.%d"), CurrentHitIdx);
+				SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*IdxTagString));
+
+				// Launch 물리 정보 추가
+				if (CurrentLaunchDistance > 0.0f)
+				{
+					FString DistTag = FString::Printf(TEXT("Effect.Launch.Dist.%d"), (int32)CurrentLaunchDistance);
+					SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*DistTag));
+				}
+				if (CurrentLaunchHeight > 0.0f)
+				{
+					FString HeightTag = FString::Printf(TEXT("Effect.Launch.Height.%d"), (int32)CurrentLaunchHeight);
+					SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*HeightTag));
+				}
+
+				AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+			}
+		}
+	}
 }
 
 void ACharacterBase::PossessedBy(AController* NewController)
@@ -155,9 +253,47 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ACharacterBase::StopSprint);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Canceled, this, &ACharacterBase::StopSprint);
 
-	
+		EnhancedInputComponent->BindAction(TargetingAction, ETriggerEvent::Started, this, &ACharacterBase::OnTargetingAction);
 	}
 } 
+
+void ACharacterBase::OnTargetingAction()
+{
+	if (AbilitySystemComponent && TargetingAbilityClass)
+	{
+		// 이미 활성화되어 있다면 취소(토글 방식), 아니면 실행
+		FGameplayTag TargetingTag = FGameplayTags::Get().TargetingStateTag;
+		if (AbilitySystemComponent->HasMatchingGameplayTag(TargetingTag))
+		{
+			FGameplayTagContainer TargetTags;
+			TargetTags.AddTag(TargetingTag);
+			AbilitySystemComponent->CancelAbilities(&TargetTags);
+		}
+		else
+		{
+			AbilitySystemComponent->TryActivateAbilityByClass(TargetingAbilityClass);
+		}
+	}
+}
+
+void ACharacterBase::SetTargetingMode(bool bEnabled)
+{
+	if (!IsLocallyControlled()) return;
+
+	bUseControllerRotationYaw = bEnabled;
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = !bEnabled;
+	}
+}
+
+void ACharacterBase::SetTargetWidgetVisible_Implementation(bool bVisible)
+{
+	if (TargetWidget)
+	{
+		TargetWidget->SetVisibility(bVisible);
+	}
+}
 
 void ACharacterBase::NotifyControllerChanged()
 {
@@ -176,7 +312,7 @@ void ACharacterBase::Move(const FInputActionValue& Value)
 {
 	if (!AbilitySystemComponent) return;
 
-	if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag("Event.BlockInput")) ||
+	if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().BlockInputEventTag) ||
 		AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().RopeActionStateTag))
 	{
 		return;
@@ -217,39 +353,53 @@ void ACharacterBase::Look(const FInputActionValue& Value)
 
 void ACharacterBase::StartSprint()
 {
+	if (!AbilitySystemComponent) return;
+
+	// 이미 질주 중이면 중복 실행 방지
+	if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().SprintStateTag))
+	{
+		return;
+	}
+
 	// 조준 중일 때는 질주 불가
-	if (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().AimingStateTag))
+	if (AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().AimingStateTag))
 	{
 		return;
 	}
 
-	// 이미 질주 중이면 중복 추가 방지
-	if (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().SprintStateTag))
-	{
-		return;
-	}
-
-	if (AttributeSet)
-	{
-		GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetSprintSpeed();
-	}
-	
+	// 타겟팅 중이면 강제 종료
 	if (AbilitySystemComponent)
 	{
-		AbilitySystemComponent->AddLooseGameplayTag(FGameplayTags::Get().SprintStateTag);
+		FGameplayTag TargetingTag = FGameplayTags::Get().TargetingStateTag;
+		if (AbilitySystemComponent->HasMatchingGameplayTag(TargetingTag))
+		{
+			FGameplayTagContainer TargetTags;
+			TargetTags.AddTag(TargetingTag);
+			AbilitySystemComponent->CancelAbilities(&TargetTags);
+		}
+	}
+
+	if (AbilitySystemComponent && SprintAbilityClass)
+	{
+		AbilitySystemComponent->TryActivateAbilityByClass(SprintAbilityClass);
 	}
 }
 
 void ACharacterBase::StopSprint()
 {
-	if (AttributeSet)
+	if (AbilitySystemComponent)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = GetAttributeSet()->GetRunSpeed();
-	}
+		FGameplayTag SprintTag = FGameplayTags::Get().SprintStateTag;
+		FGameplayTagContainer TargetTags;
+		TargetTags.AddTag(SprintTag);
 
-	if (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().SprintStateTag))
-	{
-		AbilitySystemComponent->RemoveLooseGameplayTag(FGameplayTags::Get().SprintStateTag);
+		UE_LOG(LogTemp, Warning, TEXT("[CharacterBase] StopSprint Called. Has SprintTag: %s"), AbilitySystemComponent->HasMatchingGameplayTag(SprintTag) ? TEXT("True") : TEXT("False"));
+
+		// SprintStateTag를 가진 모든 어빌리티(GA_Sprint)를 종료시킵니다.
+		AbilitySystemComponent->CancelAbilities(&TargetTags);
+
+		// 취소 호출 직후 상태 확인
+		UE_LOG(LogTemp, Warning, TEXT("[CharacterBase] After CancelAbilities. Has SprintTag: %s"), AbilitySystemComponent->HasMatchingGameplayTag(SprintTag) ? TEXT("True") : TEXT("False"));
 	}
 }
 
@@ -370,30 +520,12 @@ void ACharacterBase::RemoveAbilities(TArray<FGameplayAbilitySpecHandle> AbilityH
 void ACharacterBase::SendAbilitiesChangedEvent()
 {
 	FGameplayEventData EventData;
-	EventData.EventTag = FGameplayTag::RequestGameplayTag(FName("Event.AbilitiesChanged"));
+	EventData.EventTag = FGameplayTags::Get().AbilitiesChangedEventTag;
 	EventData.Instigator = this;
 	EventData.Target = this;
 
-	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, EventData.EventTag, EventData);
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, FGameplayTags::Get().AbilitiesChangedEventTag, EventData);
 
-}
-
-void ACharacterBase::SetCollisionShapesEnabled(bool bEnabled)
-{
-	for (UShapeComponent* Shape : CollisionShapes)
-	{
-		if (Shape)
-		{
-			if (bEnabled)
-			{
-				Shape->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			}
-			else
-			{
-				Shape->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			}
-		}
-	}
 }
 
 void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -414,3 +546,123 @@ bool ACharacterBase::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunc
 
 	return bWroteSomething;
 }
+
+void ACharacterBase::ApplyRadialDamage(FVector Origin, float Radius, float Multiplier, EHitType HitType, int32 HitIdx, float LaunchDistance, float LaunchHeight)
+{
+	if (!HasAuthority()) return;
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+
+	TArray<AActor*> IgnoreActors;
+	IgnoreActors.Add(this);
+
+	TArray<AActor*> OutActors;
+
+	bool bHit = UKismetSystemLibrary::SphereOverlapActors(
+		GetWorld(),
+		Origin,
+		Radius,
+		ObjectTypes,
+		nullptr,
+		IgnoreActors,
+		OutActors
+	);
+
+	if (bHit)
+	{
+		for (AActor* TargetActor : OutActors)
+		{
+			if (IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(TargetActor))
+			{
+				UAbilitySystemComponent* TargetASC = TargetInterface->GetAbilitySystemComponent();
+				if (TargetASC && AbilitySystemComponent && DamageEffectClass)
+				{
+					FGameplayEffectContextHandle ContextHandle = AbilitySystemComponent->MakeEffectContext();
+					ContextHandle.AddInstigator(this, this);
+
+					FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DamageEffectClass, 1.0f, ContextHandle);
+					if (SpecHandle.IsValid())
+					{
+						SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTags::Get().DamageMultiplierDataTag, Multiplier);
+
+						FString TypeTagString = FString::Printf(TEXT("Effect.HitType.%d"), (int32)HitType);
+						SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*TypeTagString));
+
+						FString IdxTagString = FString::Printf(TEXT("Effect.HitIdx.%d"), HitIdx);
+						SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*IdxTagString));
+
+						if (LaunchDistance > 0.0f)
+						{
+							FString DistTag = FString::Printf(TEXT("Effect.Launch.Dist.%d"), (int32)LaunchDistance);
+							SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*DistTag));
+						}
+						if (LaunchHeight > 0.0f)
+						{
+							FString HeightTag = FString::Printf(TEXT("Effect.Launch.Height.%d"), (int32)LaunchHeight);
+							SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*HeightTag));
+						}
+
+						AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+					}
+				}
+			}
+		}
+	}
+}
+
+void ACharacterBase::PlayHitReact(EHitType HitType, int32 HitIdx, float LaunchDistance, float LaunchHeight)
+{
+	if (!DT_Hitted || !AbilitySystemComponent) return;
+
+	static const FString ContextString(TEXT("HitReactLookup"));
+	TArray<FHittedData*> AllRows;
+	DT_Hitted->GetAllRows<FHittedData>(ContextString, AllRows);
+
+	for (FHittedData* Row : AllRows)
+	{
+		if (Row && Row->HitType == HitType && Row->idx == HitIdx)
+		{
+			if (Row->Montage)
+			{
+				float Duration = PlayAnimMontage(Row->Montage, Row->PlayRate);
+				if (Duration > 0.0f)
+				{
+					// Character.State.Hitted 태그 추가
+					FGameplayTag HittedTag = FGameplayTags::Get().HittedStateTag;
+					AbilitySystemComponent->AddLooseGameplayTag(HittedTag);
+
+					// 몽타주가 끝나면 태그 제거를 위한 타이머 설정
+					FTimerHandle TimerHandle;
+					GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, HittedTag]()
+					{
+						if (AbilitySystemComponent)
+						{
+							AbilitySystemComponent->RemoveLooseGameplayTag(HittedTag);
+						}
+					}, Duration, false);
+				}
+			}
+
+			// 물리 효과 적용 (LaunchCharacter)
+			// 전달받은 값이 0이면 데이터 테이블의 기본값을 사용
+			float FinalDist = (LaunchDistance > 0.0f) ? LaunchDistance : Row->LaunchDistance;
+			float FinalHeight = (LaunchHeight > 0.0f) ? LaunchHeight : Row->LaunchHeight;
+
+			if (FinalDist > 0.0f || FinalHeight > 0.0f)
+			{
+				FVector LaunchDir = -GetActorForwardVector(); // 기본적으로 뒤로 밀려남
+				LaunchDir.Z = 0.0f;
+				LaunchDir.Normalize();
+
+				FVector LaunchVelocity = LaunchDir * FinalDist;
+				LaunchVelocity.Z = FinalHeight;
+
+				LaunchCharacter(LaunchVelocity, true, true);
+			}
+			break;
+		}
+	}
+}
+
+

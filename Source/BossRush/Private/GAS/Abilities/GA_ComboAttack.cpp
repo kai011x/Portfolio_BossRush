@@ -2,6 +2,7 @@
 
 
 #include "GAS/Abilities/GA_ComboAttack.h"
+#include "GAS/Tags/GameplayTags.h"
 #include "Characters/CharacterBase.h"
 #include "ActionDatas.h"
 #include "GAS\Tags\GameplayTags.h"
@@ -28,11 +29,11 @@ void UGA_ComboAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, c
 	if (Character)
 	{
 
-		if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag(FName("Event.Attack.NormalInput"))))
+		if (InputTag.MatchesTagExact(FGameplayTags::Get().NormalAttackEventTag))
 		{
 			ComboDataTable = Character->DT_NormalAttackCombo;
 		}
-		else if (InputTag.MatchesTagExact(FGameplayTag::RequestGameplayTag(FName("Event.Attack.StrongInput"))))
+		else if (InputTag.MatchesTagExact(FGameplayTags::Get().StrongAttackEventTag))
 		{
 			ComboDataTable = Character->DT_StrongAttackCombo;
 		}

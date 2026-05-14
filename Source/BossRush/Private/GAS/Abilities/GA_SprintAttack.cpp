@@ -2,6 +2,7 @@
 
 
 #include "GAS/Abilities/GA_SprintAttack.h"
+#include "GAS/Tags/GameplayTags.h"
 #include "Characters/CharacterBase.h"
 #include "ActionDatas.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
@@ -17,7 +18,7 @@ void UGA_SprintAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 	ACharacterBase* Character = Cast<ACharacterBase>(ActorInfo->AvatarActor.Get());
-	SprintAttackTag = FGameplayTag::RequestGameplayTag(FName("Event.Attack.Sprint"));
+	SprintAttackTag = FGameplayTags::Get().SprintAttackTag;
 	
 	static const FString ContextString(TEXT("Montage Lookup Context"));
 

@@ -5,24 +5,35 @@
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
 #include "ActionDatas.generated.h"
-/**
- * 
- */
 
-UENUM()
-enum class EHittedType : uint8
+/**
+ * 피격 타입을 정의하는 열거형입니다.
+ */
+UENUM(BlueprintType)
+enum class EHitType : uint8
 {
-	NormalHit, StrongHit, GroundHit, UpperHit, MAX
+	None,
+	Light,
+	Heavy,
+	CrowdControl
+};
+
+/**
+ * 범위 데미지 타입을 정의하는 열거형입니다.
+ */
+UENUM(BlueprintType)
+enum class ERadialDamageType : uint8
+{
+	Instant     UMETA(DisplayName = "즉발형"),
+	MultiHit    UMETA(DisplayName = "다단히트형")
 };
 
 USTRUCT(BlueprintType)
 struct FActionData : public FTableRowBase
 {
-
 	GENERATED_BODY()
 
 public:
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	class UAnimMontage* Montage;
 
@@ -36,6 +47,12 @@ public:
 	bool bFixedCamera;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
+	float LaunchDistance = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
+	float LaunchHeight = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	class UFXSystemAsset* Effect;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
@@ -43,48 +60,45 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	FVector EffectScale = FVector::OneVector;
-
 };
-
-USTRUCT(BlueprintType)
-struct FHitData :public FTableRowBase
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	EHittedType HittedType = EHittedType::MAX;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	int32 HitIndex = -1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	float PlayRate = 1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	float Power;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	float GroggyRate;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	float Launch = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
-	FVector HitLocation = FVector::ZeroVector;
-};
-
 
 USTRUCT(BlueprintType)
 struct FMontageData : public FTableRowBase
 {
 	GENERATED_BODY()
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	FGameplayTag StateTag;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 	class UAnimMontage* Montage;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 	float PlayRate = 1.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FHittedData : public FTableRowBase
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	EHitType HitType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	class UAnimMontage* Montage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	float PlayRate = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	int32 idx;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics")
+	float LaunchDistance = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Physics")
+	float LaunchHeight = 0.0f;
 };

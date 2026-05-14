@@ -2,6 +2,7 @@
 
 
 #include "GAS/Abilities/GA_DashAttack.h"
+#include "GAS/Tags/GameplayTags.h"
 #include "Characters/CharacterBase.h"
 #include "ActionDatas.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
@@ -16,7 +17,7 @@ void UGA_DashAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 	ACharacterBase* Character = Cast<ACharacterBase>(ActorInfo->AvatarActor.Get());
-	DashAttackTag = FGameplayTag::RequestGameplayTag(FName("Event.Attack.Dash"));
+	DashAttackTag = FGameplayTags::Get().DashAttackTag;
 
 	static const FString ContextString(TEXT("Montage Lookup Context"));
 

@@ -1,6 +1,7 @@
 // GA_Dash.cpp
 
 #include "GAS/Abilities/GA_Dash.h"
+#include "GAS/Tags/GameplayTags.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
@@ -126,23 +127,23 @@ FGameplayTag UGA_Dash::DetermineDashTag(FVector LocalDirection)
 	// 입력이 거의 없으면(0,0) 앞(Front)으로 간주
 	if (LocalDirection.IsNearlyZero())
 	{
-		return FGameplayTag::RequestGameplayTag(FName("Character.State.Dash.Front"));
+		return FGameplayTags::Get().DashFrontStateTag;
 	}
 
 	// X(앞뒤)와 Y(좌우) 중 절댓값이 큰 쪽이 주된 방향
 	if (FMath::Abs(LocalDirection.X) >= FMath::Abs(LocalDirection.Y))
 	{
 		if (LocalDirection.X > 0)
-			return FGameplayTag::RequestGameplayTag(FName("Character.State.Dash.Front"));
+			return FGameplayTags::Get().DashFrontStateTag;
 		else
-			return FGameplayTag::RequestGameplayTag(FName("Character.State.Dash.Back"));
+			return FGameplayTags::Get().DashBackStateTag;
 	}
 	else
 	{
 		if (LocalDirection.Y > 0)
-			return FGameplayTag::RequestGameplayTag(FName("Character.State.Dash.Right"));
+			return FGameplayTags::Get().DashRightStateTag;
 		else
-			return FGameplayTag::RequestGameplayTag(FName("Character.State.Dash.Left"));
+			return FGameplayTags::Get().DashLeftStateTag;
 	}
 }
 

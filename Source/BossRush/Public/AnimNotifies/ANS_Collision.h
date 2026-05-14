@@ -1,22 +1,21 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Animation/AnimNotifies/AnimNotify.h"
+#include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "ActionDatas.h"
-#include "AN_DrawArrow.generated.h"
+#include "ANS_Collision.generated.h"
 
 /**
- * 
+ * 애니메이션 도중 공격 판정 콜리전을 켜고 끄며, 피격 타입을 지정하는 NotifyState입니다.
  */
 UCLASS()
-class BOSSRUSH_API UAN_DrawArrow : public UAnimNotify
+class BOSSRUSH_API UANS_Collision : public UAnimNotifyState
 {
 	GENERATED_BODY()
 
 public:
-	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
+	virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override;
+	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")

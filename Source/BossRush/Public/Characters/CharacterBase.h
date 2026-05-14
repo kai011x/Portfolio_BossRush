@@ -17,6 +17,7 @@
 #include "Components/CapsuleComponent.h"
 #include "GAS/AttributeSets/BasicAttributeSet.h"
 #include "Engine/DataTable.h"
+#include "ActionDatas.h"
 #include "CharacterBase.generated.h"
 
 class UGameplayAbility;
@@ -114,6 +115,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SprintAction;
 
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* TargetingAction;
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	ECharacterState CurrentState = ECharacterState::Idle;
@@ -138,6 +143,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
 	UDataTable* DT_Skills;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
+	UDataTable* DT_Hitted;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attribute")
 	TSubclassOf<UBasicAttributeSet> AttributeSetClass;
 
@@ -147,6 +155,20 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TArray<class UShapeComponent*> CollisionShapes;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UTargetingComponent* TargetingComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* TargetWidget;
+
+public:
+	UFUNCTION(BlueprintNativeEvent, Category = "Targeting")
+	void SetTargetWidgetVisible(bool bVisible);
+	virtual void SetTargetWidgetVisible_Implementation(bool bVisible);
+
+	UFUNCTION(BlueprintCallable, Category = "Targeting")
+	class UTargetingComponent* GetTargetingComponent() const { return TargetingComponent; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -189,6 +211,10 @@ public:
 	
 	void StopSprint();
 
+	void OnTargetingAction();
+
+	virtual void SetTargetingMode(bool bEnabled);
+
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Dash")
 	void Dash(const FInputActionValue& Value);
@@ -219,7 +245,14 @@ UFUNCTION(BlueprintCallable, Category = "Abilities")
 	UFUNCTION(BlueprintCallable, Category = "Attribute")
 	UBasicAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
+public:
 	/* --- Ability Classes --- */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
+	TSubclassOf<UGameplayAbility> SprintAbilityClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
+	TSubclassOf<UGameplayAbility> TargetingAbilityClass;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
 	TSubclassOf<UGameplayAbility> SprintAttackAbilityClass; 
 
@@ -229,11 +262,42 @@ UFUNCTION(BlueprintCallable, Category = "Abilities")
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Abilities")
 	TSubclassOf<UGameplayAbility> NormalAttackAbilityClass;
 
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void SetCollisionShapesEnabled(bool bEnabled, EHitType HitType = EHitType::None, float Multiplier = 1.0f, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void ApplyRadialDamage(FVector Origin, float Radius, float Multiplier, EHitType HitType, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void PlayHitReact(EHitType HitType, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f);
+
+
 protected:
 
 	virtual void NotifyControllerChanged() override;
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void SetCollisionShapesEnabled(bool bEnabled);
+
+	UFUNCTION()
+	void OnAttackOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+	TSubclassOf<class UGameplayEffect> DamageEffectClass;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	EHitType CurrentHitType;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	int32 CurrentHitIdx;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	float CurrentLaunchDistance;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	float CurrentLaunchHeight;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	float CurrentDamageMultiplier = 1.0f;
+
+	TArray<AActor*> AlreadyHitActors;
 
 public:
 	/** Returns CameraBoom subobject **/

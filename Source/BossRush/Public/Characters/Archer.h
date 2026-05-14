@@ -35,7 +35,7 @@ public:
 	virtual void OnNormalAttackInput() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapons")
-	void DrawArrow();
+	void DrawArrow(EHitType HitType = EHitType::None, float Multiplier = 1.0f, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "Weapons")
 	void ShootArrow();
