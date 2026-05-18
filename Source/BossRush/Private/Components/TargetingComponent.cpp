@@ -120,8 +120,7 @@ void UTargetingComponent::FindTarget()
 	if (!bHit || OutActors.Num() <= 0) return;
 
 	ACharacterBase* BestCandidate = nullptr;
-	float BestScore = -1.0f; // 내적 값 (1에 가까울수록 정면)
-	float ClosestDistance = Radius;
+	float HighestDot = -1.1f; // 내적 최소값(-1.0)보다 작게 시작하여 모든 후보를 수용
 
 	for (AActor* Actor : OutActors)
 	{
@@ -131,15 +130,11 @@ void UTargetingComponent::FindTarget()
 		FVector DirToTarget = (Candidate->GetActorLocation() - OwnerCharacter->GetActorLocation()).GetSafeNormal();
 		float Dot = FVector::DotProduct(OwnerCharacter->GetActorForwardVector(), DirToTarget);
 
-		// 정면 60도 이내(Dot > 0.5) 중에서 가장 가까운 적 선택
-		if (Dot > 0.5f)
+		// 현재까지 발견된 적 중 가장 정면에 가까운(내적값이 큰) 적을 선택
+		if (Dot > HighestDot)
 		{
-			float Dist = FVector::Dist(OwnerCharacter->GetActorLocation(), Candidate->GetActorLocation());
-			if (Dist < ClosestDistance)
-			{
-				ClosestDistance = Dist;
-				BestCandidate = Candidate;
-			}
+			HighestDot = Dot;
+			BestCandidate = Candidate;
 		}
 	}
 

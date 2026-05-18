@@ -50,16 +50,24 @@ public:
 
 	FGameplayTag EventAttackCheckTag;
 	FGameplayTag EventAttackSubactionTag;
+	FGameplayTag EventAttackSuccessTag;
+	FGameplayTag EventAttackConditionAttackTag;
 	FGameplayTag EventHitscanEndTag;
 	FGameplayTag EventHitscanStartTag;
 
 	/* --- Data & Parameters (데이터 전달용) --- */
-	FGameplayTag DamageMultiplierDataTag; // 데미지 배율 전달 태그 (SetByCaller)
+	FGameplayTag DamageMultiplierDataTag;
+	FGameplayTag HitTypeDataTag;
+	FGameplayTag HitIdxDataTag;
+	FGameplayTag LaunchDistanceDataTag;
+	FGameplayTag LaunchHeightDataTag; // 데미지 배율 전달 태그 (SetByCaller)
 	FGameplayTag DataDamageTag;           // 데미지 데이터 태그
 
 	/* --- Status & Cooldowns (상태 효과 및 쿨다운) --- */
 	FGameplayTag DashRegenStatusTag;   // 대시 게이지 재생 중 상태
 	FGameplayTag StatusStaminaRegenTag; // 스태미나 재생 중 상태
+	FGameplayTag StatusSuperArmorTag;   // 슈퍼아머 상태
+	FGameplayTag StatusUntouchableTag;  // 무적 상태
 	FGameplayTag CooldownDashTag;      // 대시 쿨다운 태그
 
 	/* --- Gameplay Abilities (어빌리티 관련) --- */
@@ -71,6 +79,8 @@ public:
 	/* --- Gameplay Cues (이펙트 및 사운드) --- */
 	FGameplayTag GameplaycueDamageBurstTag;
 	FGameplayTag GameplaycueDashActiveTag;
+	FGameplayTag GameplaycueUltraSkillFighterBeamTag;
+	FGameplayTag GameplaycueCameraShakeTag;
 
 	private:
 	static FGameplayTags GameplayTags;

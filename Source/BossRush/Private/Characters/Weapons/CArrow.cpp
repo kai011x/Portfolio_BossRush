@@ -8,6 +8,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
+#include "BossRushBlueprintLibrary.h"
 #include "GameplayTagContainer.h"
 #include "Characters/CharacterBase.h"
 
@@ -118,43 +119,13 @@ void ACArrow::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 	{
 		if (HasAuthority())
 		{
-			if (IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(OtherActor))
-			{
-				UAbilitySystemComponent* TargetASC = TargetInterface->GetAbilitySystemComponent();
-				if (TargetASC && DamageEffectClass)
-				{
-					// 발사한 캐릭터(Owner)의 ASC 가져오기
-					UAbilitySystemComponent* SourceASC = nullptr;
-					if (IAbilitySystemInterface* SourceInterface = Cast<IAbilitySystemInterface>(GetOwner()))
-					{
-						SourceASC = SourceInterface->GetAbilitySystemComponent();
-					}
-
-					if (SourceASC)
-					{
-						FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
-						ContextHandle.AddInstigator(GetOwner(), this);
-						ContextHandle.AddHitResult(Hit);
-
-						FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, 1.0f, ContextHandle);
-						if (SpecHandle.IsValid())
-						{
-							// 공격 배율 전달
-							SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTags::Get().DamageMultiplierDataTag, DamageMultiplier);
-
-							// HitType 정보를 태그로 추가
-							FString TypeTagString = FString::Printf(TEXT("Effect.HitType.%d"), (int32)HitType);
-							SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*TypeTagString));
-
-							// HitIdx 정보를 태그로 추가
-							FString IdxTagString = FString::Printf(TEXT("Effect.HitIdx.%d"), HitIdx);
-							SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*IdxTagString));
-
-							SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-						}
-					}
-				}
-			}
+			FHitInfo HitInfo;
+			HitInfo.DamageMultiplier = DamageMultiplier;
+			HitInfo.HitType = HitType;
+			HitInfo.HitIdx = HitIdx;
+			
+			// 전역 함수 호출로 한 번에 해결!
+			UBossRushBlueprintLibrary::ApplyDamageToTarget(GetOwner(), OtherActor, HitInfo);
 		}
 
 		Deactivate();

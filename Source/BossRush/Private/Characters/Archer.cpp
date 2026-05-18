@@ -143,7 +143,7 @@ void AArcher::StartAim()
 		CurrentArrow->SetActorHiddenInGame(false);
 	}
 
-	// 일반 조준 위젯 표시
+	// 일반 조준 위젯 표시/
 	if (IsLocallyControlled() && AimWidgetClass && !CurrentAimWidget)
 	{
 		CurrentAimWidget = CreateWidget<UUserWidget>(GetWorld(), AimWidgetClass);

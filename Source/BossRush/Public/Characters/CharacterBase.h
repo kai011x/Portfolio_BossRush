@@ -60,6 +60,22 @@ public:
 
 
 
+UENUM(BlueprintType)
+enum class ESize : uint8
+{
+	Small,
+	Normal,
+	Big
+};
+
+UENUM(BlueprintType)
+enum class EIdentity : uint8
+{
+	Player,
+	Enemy,
+	Boss
+};
+
 UCLASS()
 class BOSSRUSH_API ACharacterBase : public ACharacter, public IAbilitySystemInterface
 {
@@ -69,6 +85,14 @@ public:
 	ACharacterBase();
 
 	virtual class UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State", Replicated)
+	ESize CharacterSize = ESize::Normal;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State", Replicated)
+	EIdentity Identity = EIdentity::Player;
+
 
 
 
@@ -263,17 +287,21 @@ public:
 	TSubclassOf<UGameplayAbility> NormalAttackAbilityClass;
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void SetCollisionShapesEnabled(bool bEnabled, EHitType HitType = EHitType::None, float Multiplier = 1.0f, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f);
+	void SetCollisionShapesEnabled(bool bEnabled, const FHitInfo& HitInfo = FHitInfo());
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void ApplyRadialDamage(FVector Origin, float Radius, float Multiplier, EHitType HitType, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void PlayHitReact(EHitType HitType, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f);
+	void PlayHitReact(EHitType HitType, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f, AActor* HitInstigator = nullptr);
 
+	/** 블루프린트에서 쉽게 데미지를 입히기 위한 헬퍼 함수 */
+	static void ApplyDamageToTarget(AActor* SourceActor, AActor* TargetActor, const FHitInfo& HitInfo);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	TSubclassOf<class UGameplayEffect> GetDamageEffectClass() const { return DamageEffectClass; }
 
 protected:
-
 	virtual void NotifyControllerChanged() override;
 
 	UFUNCTION()
@@ -282,20 +310,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	TSubclassOf<class UGameplayEffect> DamageEffectClass;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	EHitType CurrentHitType;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	int32 CurrentHitIdx;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	float CurrentLaunchDistance;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	float CurrentLaunchHeight;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	float CurrentDamageMultiplier = 1.0f;
+	FHitInfo CurrentHitInfo;
 
 	TArray<AActor*> AlreadyHitActors;
 

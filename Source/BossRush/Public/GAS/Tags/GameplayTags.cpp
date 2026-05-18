@@ -25,7 +25,13 @@ void FGameplayTags::InitializeNativeGameplayTags()
 		FName("Character.State.Aiming"));
 
 	GameplayTags.TargetingStateTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Character.Status.Targeting"));
+		FName("Character.State.Targeting"));
+
+	GameplayTags.StatusSuperArmorTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Character.Status.SuperArmor"));
+
+	GameplayTags.StatusUntouchableTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Character.Status.Untouchable"));
 
 	GameplayTags.NormalSkillEventTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Event.Attack.NormalSkill"));
@@ -41,6 +47,18 @@ void FGameplayTags::InitializeNativeGameplayTags()
 
 	GameplayTags.DamageMultiplierDataTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Data.DamageMultiplier"));
+
+	GameplayTags.HitTypeDataTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Data.HitType"));
+
+	GameplayTags.HitIdxDataTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Data.HitIdx"));
+
+	GameplayTags.LaunchDistanceDataTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Data.LaunchDistance"));
+
+	GameplayTags.LaunchHeightDataTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Data.LaunchHeight"));
 
 	GameplayTags.BlockInputEventTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Event.BlockInput"));
@@ -81,6 +99,8 @@ void FGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.DataDamageTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Data.Damage"));
 	GameplayTags.EventAttackCheckTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Event.Attack.Check"));
 	GameplayTags.EventAttackSubactionTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Event.Attack.SubAction"));
+	GameplayTags.EventAttackSuccessTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Event.Attack.Success"));
+	GameplayTags.EventAttackConditionAttackTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Event.Attack.ConditionAttack"));
 	GameplayTags.EventHitscanEndTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Event.Hitscan.End"));
 	GameplayTags.EventHitscanStartTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Event.Hitscan.Start"));
 	GameplayTags.GameplayabilityAttackMeleeTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("GameplayAbility.Attack.Melee"));
@@ -89,5 +109,7 @@ void FGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.GameplayabilityMovementDashTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("GameplayAbility.Movement.Dash"));
 	GameplayTags.GameplaycueDamageBurstTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("GameplayCue.Damage.Burst"));
 	GameplayTags.GameplaycueDashActiveTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Gameplaycue.Dash.Active"));
+	GameplayTags.GameplaycueUltraSkillFighterBeamTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("GameplayCue.Character.UltraSkill.Fighter.Beam"));
+	GameplayTags.GameplaycueCameraShakeTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("GameplayCue.CameraShake"));
 	GameplayTags.StatusStaminaRegenTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Status.Stamina.Regen"));
 }

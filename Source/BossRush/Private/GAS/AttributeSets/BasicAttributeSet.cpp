@@ -6,6 +6,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GameplayEffectExtension.h"
 #include "Characters/CharacterBase.h"
+#include "Characters/Bosses/BossBase.h"
 
 UBasicAttributeSet::UBasicAttributeSet()
 {
@@ -20,8 +21,6 @@ void UBasicAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION_NOTIFY(UBasicAttributeSet, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UBasicAttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UBasicAttributeSet, MaxGroggy, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UBasicAttributeSet, Groggy, COND_None, REPNOTIFY_Always);
 
 	DOREPLIFETIME_CONDITION_NOTIFY(UBasicAttributeSet, Stamina, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UBasicAttributeSet, MaxStamina, COND_None, REPNOTIFY_Always);
@@ -42,7 +41,7 @@ void UBasicAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 }
 
 void UBasicAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
-	{
+{
 	Super::PostGameplayEffectExecute(Data);
 
 	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
@@ -55,54 +54,38 @@ void UBasicAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallb
 			const float NewHealth = GetHealth() - LocalDamageDone;
 			SetHealth(FMath::Clamp(NewHealth, 0.0f, GetMaxHealth()));
 
-			// 피격 리액션 처리
+			// 피격 리액션 및 대미지 기록 처리
 			UAbilitySystemComponent* TargetASC = &Data.Target;
 			ACharacterBase* TargetCharacter = Cast<ACharacterBase>(TargetASC->GetAvatarActor());
+			
+			// 공격자(Instigator) 정보 가져오기
+			AActor* Instigator = Data.EffectSpec.GetContext().GetInstigator();
+			ACharacterBase* AttackerCharacter = Cast<ACharacterBase>(Instigator);
+
 			if (TargetCharacter)
 			{
-				EHitType HitType = EHitType::None;
-				int32 HitIdx = 0;
-				float LaunchDist = 0.0f;
-				float LaunchHeight = 0.0f;
-				
-				// Spec에서 직접 태그 추출
-				for (const FGameplayTag& Tag : Data.EffectSpec.GetDynamicAssetTags())
+				const FGameplayTags& Tags = FGameplayTags::Get();
+
+				// 보스인 경우 대미지 기록 (타겟 전환용)
+				if (ABossBase* Boss = Cast<ABossBase>(TargetCharacter))
 				{
-					FString TagName = Tag.ToString();
-					if (TagName.StartsWith(TEXT("Effect.HitType.")))
-					{
-						FString TypeIndexStr = TagName.RightChop(15);
-						HitType = (EHitType)FCString::Atoi(*TypeIndexStr);
-					}
-					else if (TagName.StartsWith(TEXT("Effect.HitIdx.")))
-					{
-						FString IdxStr = TagName.RightChop(14);
-						HitIdx = FCString::Atoi(*IdxStr);
-					}
-					else if (TagName.StartsWith(TEXT("Effect.Launch.Dist.")))
-					{
-						FString DistStr = TagName.RightChop(19);
-						LaunchDist = (float)FCString::Atoi(*DistStr);
-					}
-					else if (TagName.StartsWith(TEXT("Effect.Launch.Height.")))
-					{
-						FString HeightStr = TagName.RightChop(21);
-						LaunchHeight = (float)FCString::Atoi(*HeightStr);
-					}
+					Boss->RecordDamage(AttackerCharacter, LocalDamageDone);
 				}
 
-				TargetCharacter->PlayHitReact(HitType, HitIdx, LaunchDist, LaunchHeight);
+				// SetByCaller에서 데이터 추출
+				EHitType HitType = (EHitType)FMath::RoundToInt(Data.EffectSpec.GetSetByCallerMagnitude(Tags.HitTypeDataTag, false, 0.0f));
+				int32 HitIdx = FMath::RoundToInt(Data.EffectSpec.GetSetByCallerMagnitude(Tags.HitIdxDataTag, false, 0.0f));
+				float LaunchDist = Data.EffectSpec.GetSetByCallerMagnitude(Tags.LaunchDistanceDataTag, false, 0.0f);
+				float LaunchHeight = Data.EffectSpec.GetSetByCallerMagnitude(Tags.LaunchHeightDataTag, false, 0.0f);
+
+				TargetCharacter->PlayHitReact(HitType, HitIdx, LaunchDist, LaunchHeight, Instigator);
 			}
 		}
 	}
 
-	// GE       Clamp
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
-
-		// (�ɼ�) ��� ó�� ������ ���⿡ �߰� ����
-		// if (GetHealth() <= 0.0f) { ... }
 	}
 	else if (Data.EvaluatedData.Attribute == GetStaminaAttribute())
 	{
@@ -134,7 +117,6 @@ void UBasicAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute,
 {
 	Super::PreAttributeChange(Attribute, NewValue);
 
-	// ���� ����Ǳ� ���� Max ���� ���� �ʵ��� Clamp
 	if (Attribute == GetHealthAttribute())
 	{
 		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxHealth());
@@ -151,5 +133,4 @@ void UBasicAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute,
 	{
 		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxDashCount());
 	}
-
 }

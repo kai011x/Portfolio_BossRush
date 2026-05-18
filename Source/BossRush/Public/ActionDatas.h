@@ -18,6 +18,31 @@ enum class EHitType : uint8
 	CrowdControl
 };
 
+USTRUCT(BlueprintType)
+struct FHitInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EHitType HitType = EHitType::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 HitIdx = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DamageMultiplier = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float LaunchDistance = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float LaunchHeight = 0.0f;
+
+	FHitInfo() {}
+	FHitInfo(EHitType InType, int32 InIdx, float InMult, float InDist, float InHeight)
+		: HitType(InType), HitIdx(InIdx), DamageMultiplier(InMult), LaunchDistance(InDist), LaunchHeight(InHeight) {}
+};
+
 /**
  * 범위 데미지 타입을 정의하는 열거형입니다.
  */

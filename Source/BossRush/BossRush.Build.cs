@@ -9,7 +9,7 @@ public class BossRush : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
-																	"GameplayAbilities", "GameplayTasks", "GameplayTags", "CableComponent", "UMG", "Niagara"});
+																	"GameplayAbilities", "GameplayTasks", "GameplayTags", "CableComponent", "UMG", "Niagara", "AIModule"});
 
         PrivateDependencyModuleNames.AddRange(new string[] {});
 

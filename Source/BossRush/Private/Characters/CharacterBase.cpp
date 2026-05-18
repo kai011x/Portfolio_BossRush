@@ -25,6 +25,7 @@
 #include "Components/TargetingComponent.h"
 #include "Components/WidgetComponent.h"
 
+#include "BossRushBlueprintLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 // Sets default values
@@ -73,9 +74,9 @@ ACharacterBase::ACharacterBase()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 500.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
-	CameraBoom->SocketOffset = FVector(0.0f, 0.0f, 100.0f); // 카메라를 약간 위로 올림
+	CameraBoom->SocketOffset = FVector(0.0f, 0.0f, 150.0f); // 카메라를 약간 위로 올림
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -95,6 +96,18 @@ void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// 자동으로 모든 ShapeComponent를 찾아서 등록 (본체 캡슐 제외)
+	TArray<UShapeComponent*> AllShapes;
+	GetComponents<UShapeComponent>(AllShapes);
+	for (UShapeComponent* Shape : AllShapes)
+	{
+		if (Shape != GetCapsuleComponent())
+		{
+			CollisionShapes.AddUnique(Shape);
+			UE_LOG(LogTemp, Warning, TEXT("[CharacterBase] Auto-Registered Collision Shape: %s"), *Shape->GetName());
+		}
+	}
+
 	for (UShapeComponent* Shape : CollisionShapes)
 	{
 		if (Shape)
@@ -105,13 +118,12 @@ void ACharacterBase::BeginPlay()
 	}
 }
 
-void ACharacterBase::SetCollisionShapesEnabled(bool bEnabled, EHitType HitType, float Multiplier, int32 HitIdx, float LaunchDistance, float LaunchHeight)
+
+void ACharacterBase::SetCollisionShapesEnabled(bool bEnabled, const FHitInfo& HitInfo)
 {
-	CurrentHitType = HitType;
-	CurrentHitIdx = HitIdx;
-	CurrentLaunchDistance = LaunchDistance;
-	CurrentLaunchHeight = LaunchHeight;
-	CurrentDamageMultiplier = Multiplier;
+	UE_LOG(LogTemp, Warning, TEXT("[CharacterBase] SetCollisionShapesEnabled: %s (HitIdx: %d)"), bEnabled ? TEXT("TRUE") : TEXT("FALSE"), HitInfo.HitIdx);
+
+	CurrentHitInfo = HitInfo;
 
 	if (bEnabled)
 	{
@@ -125,6 +137,7 @@ void ACharacterBase::SetCollisionShapesEnabled(bool bEnabled, EHitType HitType, 
 			if (bEnabled)
 			{
 				Shape->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+				Shape->SetCollisionResponseToAllChannels(ECR_Overlap);
 			}
 			else
 			{
@@ -138,47 +151,13 @@ void ACharacterBase::OnAttackOverlapBegin(UPrimitiveComponent* OverlappedCompone
 {
 	if (OtherActor == this || AlreadyHitActors.Contains(OtherActor)) return;
 
+	UE_LOG(LogTemp, Warning, TEXT("[CharacterBase] Overlap Detected! Target: %s"), *OtherActor->GetName());
+
 	AlreadyHitActors.Add(OtherActor);
 
-	if (IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(OtherActor))
-	{
-		UAbilitySystemComponent* TargetASC = TargetInterface->GetAbilitySystemComponent();
-		if (TargetASC && AbilitySystemComponent && DamageEffectClass)
-		{
-			FGameplayEffectContextHandle ContextHandle = AbilitySystemComponent->MakeEffectContext();
-			ContextHandle.AddInstigator(this, this);
-			ContextHandle.AddHitResult(SweepResult);
-
-			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DamageEffectClass, 1.0f, ContextHandle);
-			if (SpecHandle.IsValid())
-			{
-				// 공격 배율을 SetByCaller로 전달
-				SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTags::Get().DamageMultiplierDataTag, CurrentDamageMultiplier);
-
-				// HitType 정보를 태그로 추가 (예: Effect.HitType.Light)
-				FString TypeTagString = FString::Printf(TEXT("Effect.HitType.%d"), (int32)CurrentHitType);
-				SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*TypeTagString));
-
-				// HitIdx 정보를 태그로 추가 (예: Effect.HitIdx.1)
-				FString IdxTagString = FString::Printf(TEXT("Effect.HitIdx.%d"), CurrentHitIdx);
-				SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*IdxTagString));
-
-				// Launch 물리 정보 추가
-				if (CurrentLaunchDistance > 0.0f)
-				{
-					FString DistTag = FString::Printf(TEXT("Effect.Launch.Dist.%d"), (int32)CurrentLaunchDistance);
-					SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*DistTag));
-				}
-				if (CurrentLaunchHeight > 0.0f)
-				{
-					FString HeightTag = FString::Printf(TEXT("Effect.Launch.Height.%d"), (int32)CurrentLaunchHeight);
-					SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*HeightTag));
-				}
-
-				AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-			}
-		}
-	}
+	// 새로 만든 통합 함수 호출
+	FHitInfo HitInfo = CurrentHitInfo;
+	ApplyDamageToTarget(this, OtherActor, HitInfo);
 }
 
 void ACharacterBase::PossessedBy(AController* NewController)
@@ -533,6 +512,8 @@ void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACharacterBase, AttributeSet);
+	DOREPLIFETIME(ACharacterBase, CharacterSize);
+	DOREPLIFETIME(ACharacterBase, Identity);
 }
 
 bool ACharacterBase::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
@@ -573,47 +554,57 @@ void ACharacterBase::ApplyRadialDamage(FVector Origin, float Radius, float Multi
 	{
 		for (AActor* TargetActor : OutActors)
 		{
-			if (IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(TargetActor))
-			{
-				UAbilitySystemComponent* TargetASC = TargetInterface->GetAbilitySystemComponent();
-				if (TargetASC && AbilitySystemComponent && DamageEffectClass)
-				{
-					FGameplayEffectContextHandle ContextHandle = AbilitySystemComponent->MakeEffectContext();
-					ContextHandle.AddInstigator(this, this);
+			FHitInfo HitInfo;
+			HitInfo.DamageMultiplier = Multiplier;
+			HitInfo.HitType = HitType;
+			HitInfo.HitIdx = HitIdx;
+			HitInfo.LaunchDistance = LaunchDistance;
+			HitInfo.LaunchHeight = LaunchHeight;
 
-					FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DamageEffectClass, 1.0f, ContextHandle);
-					if (SpecHandle.IsValid())
-					{
-						SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTags::Get().DamageMultiplierDataTag, Multiplier);
-
-						FString TypeTagString = FString::Printf(TEXT("Effect.HitType.%d"), (int32)HitType);
-						SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*TypeTagString));
-
-						FString IdxTagString = FString::Printf(TEXT("Effect.HitIdx.%d"), HitIdx);
-						SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*IdxTagString));
-
-						if (LaunchDistance > 0.0f)
-						{
-							FString DistTag = FString::Printf(TEXT("Effect.Launch.Dist.%d"), (int32)LaunchDistance);
-							SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*DistTag));
-						}
-						if (LaunchHeight > 0.0f)
-						{
-							FString HeightTag = FString::Printf(TEXT("Effect.Launch.Height.%d"), (int32)LaunchHeight);
-							SpecHandle.Data.Get()->AddDynamicAssetTag(FGameplayTag::RequestGameplayTag(*HeightTag));
-						}
-
-						AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-					}
-				}
-			}
+			ApplyDamageToTarget(this, TargetActor, HitInfo);
 		}
 	}
 }
 
-void ACharacterBase::PlayHitReact(EHitType HitType, int32 HitIdx, float LaunchDistance, float LaunchHeight)
+void ACharacterBase::PlayHitReact(EHitType HitType, int32 HitIdx, float LaunchDistance, float LaunchHeight, AActor* HitInstigator)
 {
 	if (!DT_Hitted || !AbilitySystemComponent) return;
+
+	// 크기 비교를 통한 시선 처리 로직
+	if (HitInstigator)
+	{
+		ACharacterBase* Attacker = Cast<ACharacterBase>(HitInstigator);
+		bool bShouldRotate = false;
+
+		if (Attacker)
+		{
+			// 공격자와 사이즈가 같으면 바라봄
+			if (Attacker->CharacterSize == CharacterSize)
+			{
+				bShouldRotate = true;
+			}
+			// 때린 캐릭터가 더 크면 바라보지 않음 (bShouldRotate = false 유지)
+		}
+		else
+		{
+			// 일반 액터(공격자가 CharacterBase가 아님)일 경우 기본적으로 바라보게 설정 (기존 로직 유지)
+			if (CharacterSize != ESize::Big)
+			{
+				bShouldRotate = true;
+			}
+		}
+
+		if (bShouldRotate)
+		{
+			FVector Direction = HitInstigator->GetActorLocation() - GetActorLocation();
+			Direction.Z = 0.0f;
+			if (!Direction.IsNearlyZero())
+			{
+				FRotator NewRot = FRotationMatrix::MakeFromX(Direction).Rotator();
+				SetActorRotation(NewRot);
+			}
+		}
+	}
 
 	static const FString ContextString(TEXT("HitReactLookup"));
 	TArray<FHittedData*> AllRows;
@@ -634,24 +625,23 @@ void ACharacterBase::PlayHitReact(EHitType HitType, int32 HitIdx, float LaunchDi
 
 					// 몽타주가 끝나면 태그 제거를 위한 타이머 설정
 					FTimerHandle TimerHandle;
-					GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, HittedTag]()
+					GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, HittedTag]()
 					{
 						if (AbilitySystemComponent)
 						{
 							AbilitySystemComponent->RemoveLooseGameplayTag(HittedTag);
 						}
-					}, Duration, false);
+					}), Duration, false);
 				}
 			}
 
-			// 물리 효과 적용 (LaunchCharacter)
-			// 전달받은 값이 0이면 데이터 테이블의 기본값을 사용
+			// 물리 효과 적용
 			float FinalDist = (LaunchDistance > 0.0f) ? LaunchDistance : Row->LaunchDistance;
 			float FinalHeight = (LaunchHeight > 0.0f) ? LaunchHeight : Row->LaunchHeight;
 
 			if (FinalDist > 0.0f || FinalHeight > 0.0f)
 			{
-				FVector LaunchDir = -GetActorForwardVector(); // 기본적으로 뒤로 밀려남
+				FVector LaunchDir = -1 * GetActorForwardVector();
 				LaunchDir.Z = 0.0f;
 				LaunchDir.Normalize();
 
@@ -665,4 +655,8 @@ void ACharacterBase::PlayHitReact(EHitType HitType, int32 HitIdx, float LaunchDi
 	}
 }
 
+void ACharacterBase::ApplyDamageToTarget(AActor* SourceActor, AActor* TargetActor, const FHitInfo& HitInfo)
+{
+	UBossRushBlueprintLibrary::ApplyDamageToTarget(SourceActor, TargetActor, HitInfo);
+}
 

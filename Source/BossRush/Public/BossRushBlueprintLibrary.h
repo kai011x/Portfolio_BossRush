@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "GameplayTagContainer.h"
+#include "ActionDatas.h"
 #include "BossRushBlueprintLibrary.generated.h"
 
 UCLASS()
@@ -11,6 +12,15 @@ class BOSSRUSH_API UBossRushBlueprintLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
+	/**
+	 * 소스 액터에서 타겟 액터로 데미지를 적용합니다. GAS 시스템을 기반으로 동작합니다.
+	 * @param SourceActor 공격자
+	 * @param TargetActor 피해자
+	 * @param HitInfo 데미지 및 물리 효과 정보
+	 */
+	UFUNCTION(BlueprintCallable, Category = "BossRush|Gameplay")
+	static void ApplyDamageToTarget(AActor* SourceActor, AActor* TargetActor, const FHitInfo& HitInfo);
+
 	UFUNCTION(BlueprintPure, Category = "BossRush|Tags")
 	static FGameplayTag GetSprintStateTag();
 
