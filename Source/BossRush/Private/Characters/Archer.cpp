@@ -114,14 +114,7 @@ void AArcher::UpdateCameraZoom(float DeltaTime)
 	}
 }
 
-void AArcher::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
-	// Archer 전용 입력 바인딩이 필요하다면 여기에 추가 (현재는 부모 클래스에서 NormalAction 바인딩을 처리함)
-}
-
-void AArcher::StartAim()
+void AArcher::StartAim() 
 {
 	if (!AbilitySystemComponent) return;
 

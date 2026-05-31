@@ -35,13 +35,6 @@ void UTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		return;
 	}
 
-	// 타겟이 사망했는지 체크 (GAS 태그 또는 상태 확인)
-	if (TargetCharacter->CurrentState == ECharacterState::Dead)
-	{
-		EndTargeting();
-		return;
-	}
-
 	Tick_FollowTarget(DeltaTime);
 }
 
@@ -125,7 +118,7 @@ void UTargetingComponent::FindTarget()
 	for (AActor* Actor : OutActors)
 	{
 		ACharacterBase* Candidate = Cast<ACharacterBase>(Actor);
-		if (!Candidate || Candidate->CurrentState == ECharacterState::Dead) continue;
+		if (!Candidate) continue;
 
 		FVector DirToTarget = (Candidate->GetActorLocation() - OwnerCharacter->GetActorLocation()).GetSafeNormal();
 		float Dot = FVector::DotProduct(OwnerCharacter->GetActorForwardVector(), DirToTarget);
@@ -181,7 +174,7 @@ void UTargetingComponent::ChangeTarget(bool bIsRight)
 	for (AActor* Actor : OutActors)
 	{
 		ACharacterBase* Candidate = Cast<ACharacterBase>(Actor);
-		if (!Candidate || Candidate->CurrentState == ECharacterState::Dead) continue;
+		if (!Candidate) continue;
 
 		FVector DirToCandidate = (Candidate->GetActorLocation() - OwnerCharacter->GetActorLocation()).GetSafeNormal();
 		FVector Cross = FVector::CrossProduct(OwnerCharacter->GetActorForwardVector(), DirToCandidate);

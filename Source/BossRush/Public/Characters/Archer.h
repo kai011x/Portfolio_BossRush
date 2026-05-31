@@ -23,7 +23,6 @@ public:
 public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Aim")
 	void StartAim();
@@ -46,7 +45,7 @@ public:
 	void SetAimTargetLocation(const FVector& InLocation);
 	void ClearAimTarget();
 
-	// 위젯 제어 함수
+	// ?�젯 ?�어 ?�수
 	void SetRopeAimWidgetVisible(bool bVisible);
 	
 	UFUNCTION(BlueprintImplementableEvent, Category = "UI")
