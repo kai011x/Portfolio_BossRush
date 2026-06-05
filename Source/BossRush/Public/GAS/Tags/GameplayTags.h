@@ -16,6 +16,10 @@ public:
 	static void InitializeNativeGameplayTags();
 
 	/* --- Character States (캐릭터 상태) --- */
+	FGameplayTag DefenseStateTag;      // 캐릭터 방어 상태
+	FGameplayTag ChaseStateTag;        // 캐릭터 추격 상태
+	FGameplayTag GimmickStateTag;      // 캐릭터 기믹 상태
+	FGameplayTag GroggyStateTag;       // 캐릭터 그로기 상태
 	FGameplayTag SprintStateTag;       // 캐릭터 질주 상태
 	FGameplayTag DashStateTag;         // 대시 가능 상태 (공격 연계용)
 	FGameplayTag AimingStateTag;       // 조준 상태

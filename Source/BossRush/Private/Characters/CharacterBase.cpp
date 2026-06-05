@@ -338,7 +338,7 @@ void ACharacterBase::StopSprint()
 		TargetTags.AddTag(SprintTag);
 
 		UE_LOG(LogTemp, Warning, TEXT("[CharacterBase] StopSprint Called. Has SprintTag: %s"), AbilitySystemComponent->HasMatchingGameplayTag(SprintTag) ? TEXT("True") : TEXT("False"));
-
+		
 		// SprintStateTag를 가진 모든 어빌리티(GA_Sprint)를 종료시킵니다.
 		AbilitySystemComponent->CancelAbilities(&TargetTags);
 

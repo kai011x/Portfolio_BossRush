@@ -6,6 +6,8 @@
 #include "AIController.h"
 #include "BossAIController.generated.h"
 
+class UStateTreeComponent;
+
 /**
  * 보스 전용 AI 컨트롤러
  */
@@ -21,11 +23,7 @@ protected:
 	virtual void OnPossess(APawn* InPawn) override;
 
 protected:
-	/** 실행할 비헤이비어 트리 */
-	UPROPERTY(EditAnywhere, Category = "AI")
-	class UBehaviorTree* BTAsset;
-
-	/** 사용할 블랙보드 데이터 */
-	UPROPERTY(EditAnywhere, Category = "AI")
-	class UBlackboardData* BBAsset;
+	/** 사용할 State Tree 컴포넌트 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStateTreeComponent> StateTreeComponent;
 };

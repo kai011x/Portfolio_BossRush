@@ -2,21 +2,19 @@
 
 
 #include "Characters/Bosses/BossAIController.h"
-#include "BehaviorTree/BehaviorTree.h"
-#include "BehaviorTree/BlackboardComponent.h"
+#include "Components/StateTreeComponent.h"
 
 ABossAIController::ABossAIController()
 {
+	StateTreeComponent = CreateDefaultSubobject<UStateTreeComponent>(TEXT("StateTreeComponent"));
 }
 
 void ABossAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	UBlackboardComponent* BBComp = Blackboard;
-	if (UseBlackboard(BBAsset, BBComp))
+	if (StateTreeComponent)
 	{
-		Blackboard = BBComp;
-		RunBehaviorTree(BTAsset);
+		StateTreeComponent->StartLogic();
 	}
 }

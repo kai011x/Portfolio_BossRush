@@ -6,6 +6,18 @@ FGameplayTags FGameplayTags::GameplayTags;
 void FGameplayTags::InitializeNativeGameplayTags()
 {
 	// �̱��� �ν��Ͻ��� �±׸� �����Ͽ� ��� (�̸�, �ּ�(����) ����)
+	GameplayTags.DefenseStateTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Character.State.Defense"));
+
+	GameplayTags.ChaseStateTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Character.State.Chase"));
+
+	GameplayTags.GimmickStateTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Character.State.Gimmick"));
+
+	GameplayTags.GroggyStateTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Character.State.Groggy"));
+
 	GameplayTags.SprintStateTag = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Character.State.Sprint"));
 

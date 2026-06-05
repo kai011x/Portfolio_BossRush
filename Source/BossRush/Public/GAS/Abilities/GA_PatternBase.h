@@ -13,10 +13,12 @@ UENUM(BlueprintType)
 enum class EPatternType : uint8
 {
 	Attack      UMETA(DisplayName = "Attack"),      // 일반 근접 공격
-	WaitCounter UMETA(DisplayName = "WaitCounter"), // 반격 대기 상태
-	Ranged      UMETA(DisplayName = "Ranged"),      // 원거리 공격
-	Escape      UMETA(DisplayName = "Escape")       // 회피 및 도망
+	Dodge		UMETA(DisplayName = "Dodge"),		// 회피 대기 상태
+	Defense      UMETA(DisplayName = "Defense"),    // 공격
+	Max
 };
+
+
 
 /**
  * 모든 보스 패턴(Ability)의 기반이 되는 클래스
@@ -32,7 +34,7 @@ public:
 protected:
 	/** 이 패턴의 종류 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pattern")
-	EPatternType PatternType = EPatternType::Attack;
+	EPatternType PatternType = EPatternType::Max;
 
 	/** 패턴 실행 시 재생할 몽타주 (선택 사항) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pattern|Animation")
