@@ -50,11 +50,14 @@ void UBossRushBlueprintLibrary::ApplyDamageToTarget(AActor* SourceActor, AActor*
 				SpecHandle.Data.Get()->SetSetByCallerMagnitude(GTags.LaunchDistanceDataTag, HitInfo.LaunchDistance);
 				SpecHandle.Data.Get()->SetSetByCallerMagnitude(GTags.LaunchHeightDataTag, HitInfo.LaunchHeight);
 
-				// 2. 데미지 배달!
-				SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-
-				// 3. 리액션 처리 (슈퍼아머가 아닐 때만 실행)
-				if (!TargetASC->HasMatchingGameplayTag(GTags.StatusSuperArmorTag))
+				// 2. 무적이 아니면 데미지 배달!
+				if (!TargetASC->HasMatchingGameplayTag(GTags.StatusUntouchableTag))
+				{
+					SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+				}
+				
+				// 3. 리액션 처리 (슈퍼아머, 무적이 아닐 때만 실행)
+				if (!TargetASC->HasMatchingGameplayTag(GTags.StatusSuperArmorTag) || !TargetASC->HasMatchingGameplayTag(GTags.StatusUntouchableTag))
 				{
 					if (ACharacterBase* TargetChar = Cast<ACharacterBase>(TargetActor))
 					{

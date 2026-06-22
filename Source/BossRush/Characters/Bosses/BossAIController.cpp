@@ -3,6 +3,7 @@
 
 #include "Characters/Bosses/BossAIController.h"
 #include "Components/StateTreeComponent.h"
+#include "Characters/Bosses/BossBase.h"
 
 ABossAIController::ABossAIController()
 {
@@ -16,5 +17,15 @@ void ABossAIController::OnPossess(APawn* InPawn)
 	if (StateTreeComponent)
 	{
 		StateTreeComponent->StartLogic();
+	}
+}
+
+void ABossAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
+{
+	Super::OnMoveCompleted(RequestID, Result);
+	
+	if (ABossBase* Boss = Cast<ABossBase>(GetPawn()))
+	{
+		Boss->OnChaseCompleted();
 	}
 }

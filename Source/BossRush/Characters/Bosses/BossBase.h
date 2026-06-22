@@ -26,6 +26,7 @@ enum class EPatternType : uint8
 	Attack      UMETA(DisplayName = "Attack"),      // 일반 근접 공격
 	Dodge		UMETA(DisplayName = "Dodge"),		// 회피 대기 상태
 	Defense      UMETA(DisplayName = "Defense"),    // 공격
+	Chase        UMETA(DisplayName = "Chase"),      // 추격 상태
 	Max
 };
 
@@ -79,10 +80,6 @@ class BOSSRUSH_API ABossBase : public ACharacterBase
 public:
 	ABossBase();
 
-	/** 현재 패턴 실행 중인지 여부 반환 */
-	UFUNCTION(BlueprintCallable, Category = "Boss|Combat")
-	bool IsExecutingPattern() const { return bIsExecutingPattern; }
-
 	/** 기믹 실행 요청 */
 	UFUNCTION(BlueprintCallable, Category = "Gimmick")
 	void RequestGimmick(int32 GimmickIndex);
@@ -93,6 +90,10 @@ public:
 	/** 특정 타입의 패턴 실행 */
 	UFUNCTION(BlueprintCallable, Category = "Boss|Combat")
 	void ExecutePattern();
+
+	/** 현재 패턴 실행 중 여부 반환 */
+	UFUNCTION(BlueprintCallable, Category = "Boss|Combat")
+	FORCEINLINE bool IsExecutingPattern() const { return bIsExecutingPattern; }
 
 	/** 다음 실행할 패턴 선택 및 반환 */
 	UFUNCTION(BlueprintCallable, Category = "Boss|Combat")
@@ -109,6 +110,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Boss|Combat")
 	void RotateToTarget();
 
+	/** Chase 패턴 이동 완료 시 호출 */
+	void OnChaseCompleted();
+
 public:
 
 	/** 타겟 전환 로직 */
@@ -123,8 +127,7 @@ public:
 	virtual void BeginPlay() override;
 protected:
 	/** 현재 패턴 실행 중 여부 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Boss|Combat")
-	bool bIsExecutingPattern = false;
+
 
 	/** 패턴 사이의 지연 시간 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss|Combat")
@@ -140,10 +143,14 @@ protected:
 
 public:
 
-	/** 보스가 사용할 수 있는 기믹 클래스 목록 */
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss|Pattern")
 
 	EPatternType CurPatternType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss|Pattern")
+
+	EPatternType DebugPatternType = EPatternType::Max;
 	
 	FTimerHandle CooldownTimerHandle;
 
@@ -196,6 +203,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EDistance DistKey = EDistance::Far;
 
+	/** 현재 패턴 실행 중인지 여부 반환 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Boss|Combat")
+	bool bIsExecutingPattern = false;
 
 	/** 플레이어별 누적 대미지 맵 */
 	UPROPERTY()

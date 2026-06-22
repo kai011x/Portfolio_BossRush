@@ -10,7 +10,6 @@ AWukong::AWukong()
 {
 	// 보스 기본 설정 (BossBase에서 설정한 것들 중 우콩 전용으로 덮어쓰기)
 	Identity = EIdentity::Boss;
-	CharacterSize = ESize::Normal; // 우콩은 인간형이라 Normal
 
 	// 우콩은 날렵하므로 쿨타임을 조금 짧게 설정
 	PatternCooldown = 1.5f;

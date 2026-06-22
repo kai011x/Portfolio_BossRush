@@ -7,6 +7,7 @@
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotionConstantForce.h"
 #include "AbilitySystemComponent.h"
+#include "Characters/Bosses/BossBase.h"
 #include "Characters/CharacterBase.h"
 
 
@@ -39,13 +40,13 @@ void UGA_Dash::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FG
 	if (DashRegenEffectClass)
 	{
 		UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+
 		if (ASC)
 		{
-			// 이펙트 컨텍스트 생성 (누가 쐈는지 등 정보)
+
 			FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
 			ContextHandle.AddSourceObject(this);
 
-	
 			FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(DashRegenEffectClass, 1.0f, ContextHandle);
 
 			if (SpecHandle.IsValid())
@@ -69,9 +70,6 @@ void UGA_Dash::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FG
 
 	// 4. 태그와 일치하는 몽타주 데이터를 테이블에서 직접 검색 (RowName 안 씀)
 	FMontageData* FoundData = FindMontageDataByTag(DashMontageTable, TargetTag);
-
-	// 5. 몽타주 재생
-	UE_LOG(LogTemp, Log, TEXT("Dash Direction: X=%f, Y=%f, Z=%f"), LocalDir.X, LocalDir.Y, LocalDir.Z);
 
 	if (FoundData && FoundData->Montage)
 	{

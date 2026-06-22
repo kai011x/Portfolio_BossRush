@@ -34,10 +34,10 @@ public:
 	virtual void OnNormalAttackInput() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapons")
-	void DrawArrow(EHitType HitType = EHitType::None, float Multiplier = 1.0f, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f);
+	void DrawArrow();
 
 	UFUNCTION(BlueprintCallable, Category = "Weapons")
-	void ShootArrow();
+	void ShootArrow(EHitType HitType = EHitType::Light, float Multiplier = 1.0f, int32 HitIdx = 0, float LaunchDistance = 0.0f, float LaunchHeight = 0.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "GAS")
 	AGameplayAbilityTargetActor* GetOrCreateTargetActor();
@@ -68,7 +68,7 @@ public:
 
 	ACArrow* GetArrowFromPool();
 
-private:
+public:
 	FVector AimTargetLocation;
 	bool bHasAimTarget = false;
 
@@ -77,6 +77,7 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class UUserWidget> RopeAimWidgetClass;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<AGameplayAbilityTargetActor> TargetActorClass;

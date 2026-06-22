@@ -14,4 +14,14 @@ class BOSSRUSH_API AGATA_ArrowLineTrace : public AGameplayAbilityTargetActor_Sin
 {
 	GENERATED_BODY()
 	
+public:
+	AGATA_ArrowLineTrace();
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Targeting")
+	bool bUsePlayerCameraDirection = false;
+
+	virtual void Tick(float DeltaSeconds) override;
+
+protected:
+	virtual FHitResult PerformTrace(AActor* InSourceActor) override;
 };

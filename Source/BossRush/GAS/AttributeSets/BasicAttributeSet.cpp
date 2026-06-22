@@ -72,6 +72,24 @@ void UBasicAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallb
 					Boss->RecordDamage(AttackerCharacter, LocalDamageDone);
 				}
 
+				// 데미지 출력용 게임플레이 큐 호출 (로컬 클라이언트에서 데미지 숫자를 띄우기 위함)
+				if (TargetASC)
+				{
+					FGameplayCueParameters Params;
+					Params.RawMagnitude = LocalDamageDone;
+					Params.EffectContext = Data.EffectSpec.GetContext();
+					Params.Instigator = Instigator;
+
+					// 치명타 태그가 있는지 확인하여 큐 파라미터에 전달
+					bool bIsCritical = TargetASC->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Data.Damage.Critical")));
+					if (bIsCritical)
+					{
+						Params.GameplayCueTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Data.Damage.Critical")));
+					}
+
+					TargetASC->ExecuteGameplayCue(Tags.GameplaycueDamageBurstTag, Params);
+				}
+
 				// SetByCaller에서 데이터 추출
 				EHitType HitType = (EHitType)FMath::RoundToInt(Data.EffectSpec.GetSetByCallerMagnitude(Tags.HitTypeDataTag, false, 0.0f));
 				int32 HitIdx = FMath::RoundToInt(Data.EffectSpec.GetSetByCallerMagnitude(Tags.HitIdxDataTag, false, 0.0f));

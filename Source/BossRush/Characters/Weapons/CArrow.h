@@ -48,6 +48,15 @@ public:
 		LaunchHeight = InLaunchHeight;
 	}
 
+	void SetAttackData(float InMultiplier, EHitType InHitType, int32 InHitIdx = 0, float InLaunchDistance = 0.0f, float InLaunchHeight = 0.0f)
+	{
+		DamageMultiplier = InMultiplier;
+		HitType = InHitType;
+		HitIdx = InHitIdx;
+		LaunchDistance = InLaunchDistance;
+		LaunchHeight = InLaunchHeight;
+	}
+
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USphereComponent* Sphere;

@@ -13,12 +13,17 @@ class UInputAction;
 /**
  * 기믹 입력 제어 기능이 포함된 플레이어 컨트롤러
  */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnDamageDealt, AActor*, TargetActor, float, DamageAmount, FVector, HitLocation, bool, bIsCritical);
+
 UCLASS()
 class BOSSRUSH_API ABossRushPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(BlueprintAssignable, Category = "UI")
+	FOnDamageDealt OnDamageDealt;
+
 	/** 기믹 모드 활성화/비활성화 (입력 컨텍스트 전환) */
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void SetGimmickInputMode(bool bEnabled);

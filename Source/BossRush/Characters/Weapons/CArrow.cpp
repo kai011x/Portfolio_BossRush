@@ -2,6 +2,7 @@
 
 
 #include "Characters/Weapons/CArrow.h"
+#include "Engine/EngineTypes.h"
 #include "GAS/Tags/GameplayTags.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
@@ -21,16 +22,21 @@ ACArrow::ACArrow()
 	bReplicates = true;
 	SetReplicateMovement(true);
 
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	RootComponent = Mesh;
-
 	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
-	Sphere->SetupAttachment(Mesh);
+	RootComponent = Sphere;
 	Sphere->SetSphereRadius(5.f);
 	Sphere->SetCollisionProfileName(TEXT("Projectile"));
+	Sphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Sphere->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	Sphere->SetUseCCD(true);
+
+	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	Mesh->SetupAttachment(Sphere);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
-	ProjectileMovement->SetUpdatedComponent(Mesh);
+	ProjectileMovement->SetUpdatedComponent(Sphere);
 	ProjectileMovement->InitialSpeed = 3000.f;
 	ProjectileMovement->MaxSpeed = 3000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
@@ -107,6 +113,11 @@ void ACArrow::Launch(const FVector& InDirection)
 	
 	SetActorEnableCollision(true);
 
+	if (AActor* MyOwner = GetOwner())
+	{
+		Sphere->IgnoreActorWhenMoving(MyOwner, true);
+	}
+
 	ProjectileMovement->Activate();
 	ProjectileMovement->Velocity = InDirection * ProjectileMovement->InitialSpeed;
 
@@ -126,9 +137,9 @@ void ACArrow::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 			
 			// 전역 함수 호출로 한 번에 해결!
 			UBossRushBlueprintLibrary::ApplyDamageToTarget(GetOwner(), OtherActor, HitInfo);
+			UE_LOG(LogTemp, Log, TEXT("Arrow hit %s with DamageMultiplier: %f, HitType: %d, HitIdx: %d"), *OtherActor->GetName(), DamageMultiplier, (int32)HitType, HitIdx);
 		}
 
 		Deactivate();
 	}
 }
-

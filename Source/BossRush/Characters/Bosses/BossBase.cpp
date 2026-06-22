@@ -2,11 +2,13 @@
 
 
 #include "Characters/Bosses/BossBase.h"
+#include "Components/CapsuleComponent.h"
 #include "GimmickManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "AbilitySystemComponent.h"
 #include "GAS/AttributeSets/BossAttributeSet.h"
 #include "Characters/Bosses/BossAIController.h"
+#include "AIController.h"
 #include "GimmickBase.h"
 #include "GAS/Abilities/Boss/GA_PatternBase.h"
 #include "Components/StateTreeComponent.h"
@@ -17,7 +19,6 @@ ABossBase::ABossBase()
 {
 	// 보스 기본 설정
 	Identity = EIdentity::Boss;
-	CharacterSize = ESize::Big;
 
 	// AI 컨트롤러 설정
 	AIControllerClass = ABossAIController::StaticClass();
@@ -28,6 +29,10 @@ ABossBase::ABossBase()
 
 	// StateTree 컴포넌트 생성 및 설정
 	StateTreeComponent = CreateDefaultSubobject<UStateTreeComponent>(TEXT("StateTreeComponent"));
+
+	// 플레이어 카메라가 보스 캐릭터 캡슐 및 메쉬와 부딪히지 않도록 무시 설정
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 }
 
 
@@ -83,8 +88,16 @@ void ABossBase::ExecutePattern()
 
 		break;
 	case EPatternType::Dodge:
+		AbilitySystemComponent->TryActivateAbilityByClass(DashAttackAbilityClass);
 		break;
 	case EPatternType::Defense:
+		break;
+	case EPatternType::Chase:
+		if (AAIController* AIC = Cast<AAIController>(GetController()))
+		{
+			bIsExecutingPattern = true;
+			AIC->MoveToActor(CurrentTarget, 300.0f);
+		}
 		break;
 	case EPatternType::Max:
 		break;
@@ -146,24 +159,29 @@ void ABossBase::CalculateDistanceMontageCounts()
 
 EPatternType ABossBase::GetNextPattern()
 {
-	if (IsExecutingPattern()) {
+	if (bIsExecutingPattern) {
 		return CurPatternType; // 이미 패턴 실행 중이면 현재 패턴 반환
 	}
 
-	if (!CurrentTarget) return EPatternType::Attack;
+	if (DebugPatternType != EPatternType::Max)
+	{
+		return DebugPatternType;
+	}
 
-	//EDistance SelectedDistKey = GetCurrentDistanceKey();
-	EDistance SelectedDistKey = EDistance::Near;
-	return EPatternType::Attack;
+	if (!CurrentTarget) return EPatternType::Max;
 
-	//const FPatternTypeList* PatternList = DistancePatternMap.Find(SelectedDistKey);
-	//if (PatternList && PatternList->PatternTypes.Num() > 0)
-	//{
-	//	int32 RandomIdx = FMath::RandRange(0, PatternList->PatternTypes.Num() - 1);
-	//	return PatternList->PatternTypes[RandomIdx];
-	//}
+	EDistance SelectedDistKey = GetCurrentDistanceKey();
 
-	//return EPatternType::Max;
+
+
+	const FPatternTypeList* PatternList = DistancePatternMap.Find(SelectedDistKey);
+	if (PatternList && PatternList->PatternTypes.Num() > 0)
+	{
+		int32 RandomIdx = FMath::RandRange(0, PatternList->PatternTypes.Num() - 1);
+		return PatternList->PatternTypes[RandomIdx];
+	}
+
+	return EPatternType::Max;
 }
 
 void ABossBase::RotateToTarget()
@@ -295,5 +313,13 @@ void ABossBase::OnGimmickFinished(AGimmickBase* Gimmick, bool bSuccess)
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[BossBase] Gimmick Failed! Players taking penalty."));
+	}
+}
+
+void ABossBase::OnChaseCompleted()
+{
+	if (bIsExecutingPattern && CurPatternType == EPatternType::Chase)
+	{
+		GetWorldTimerManager().SetTimer(CooldownTimerHandle, this, &ABossBase::ResetPatternExecution, PatternCooldown, false);
 	}
 }

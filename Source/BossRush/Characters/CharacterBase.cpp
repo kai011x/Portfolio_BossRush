@@ -23,6 +23,7 @@
 #include "Components/SphereComponent.h"
 #include "GAS/Effects/GE_Damage.h"
 #include "Components/TargetingComponent.h"
+#include "GAS/Abilities/GA_Hitted.h"
 #include "Components/WidgetComponent.h"
 
 #include "BossRushBlueprintLibrary.h"
@@ -77,6 +78,10 @@ ACharacterBase::ACharacterBase()
 	CameraBoom->TargetArmLength = 500.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 	CameraBoom->SocketOffset = FVector(0.0f, 0.0f, 150.0f); // 카메라를 약간 위로 올림
+	CameraBoom->bDoCollisionTest = true;
+
+	// 플레이어 카메라가 본인 캡슐에 충돌하지 않도록 설정
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -177,7 +182,9 @@ void ACharacterBase::PossessedBy(AController* NewController)
 
 
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-		GrantAbilities(StartingAbilities);
+		TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities = StartingAbilities;
+		DefaultAbilities.Add(UGA_Hitted::StaticClass());
+		GrantAbilities(DefaultAbilities);
 
 
 		if (AttributeSet)
@@ -477,7 +484,6 @@ void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACharacterBase, AttributeSet);
-	DOREPLIFETIME(ACharacterBase, CharacterSize);
 	DOREPLIFETIME(ACharacterBase, Identity);
 }
 
@@ -533,91 +539,16 @@ void ACharacterBase::ApplyRadialDamage(FVector Origin, float Radius, float Multi
 
 void ACharacterBase::PlayHitReact(EHitType HitType, int32 HitIdx, float LaunchDistance, float LaunchHeight, AActor* HitInstigator)
 {
-	if (!DT_Hitted || !AbilitySystemComponent) return;
+	if (!AbilitySystemComponent) return;
 
-	// 크기 비교를 통한 시선 처리 로직
-	if (HitInstigator)
-	{
-		ACharacterBase* Attacker = Cast<ACharacterBase>(HitInstigator);
-		bool bShouldRotate = false;
+	LastHitData.HitType = HitType;
+	LastHitData.HitIdx = HitIdx;
+	LastHitData.LaunchDistance = LaunchDistance;
+	LastHitData.LaunchHeight = LaunchHeight;
+	LastHitInstigator = HitInstigator;
 
-		if (Attacker)
-		{
-			// 공격자와 사이즈가 같으면 바라봄
-			if (Attacker->CharacterSize == CharacterSize)
-			{
-				bShouldRotate = true;
-			}
-			// 때린 캐릭터가 더 크면 바라보지 않음 (bShouldRotate = false 유지)
-		}
-		else
-		{
-			// 일반 액터(공격자가 CharacterBase가 아님)일 경우 기본적으로 바라보게 설정 (기존 로직 유지)
-			if (CharacterSize != ESize::Big)
-			{
-				bShouldRotate = true;
-			}
-		}
-
-		if (bShouldRotate)
-		{
-			FVector Direction = HitInstigator->GetActorLocation() - GetActorLocation();
-			Direction.Z = 0.0f;
-			if (!Direction.IsNearlyZero())
-			{
-				FRotator NewRot = FRotationMatrix::MakeFromX(Direction).Rotator();
-				SetActorRotation(NewRot);
-			}
-		}
-	}
-
-	static const FString ContextString(TEXT("HitReactLookup"));
-	TArray<FHittedData*> AllRows;
-	DT_Hitted->GetAllRows<FHittedData>(ContextString, AllRows);
-
-	for (FHittedData* Row : AllRows)
-	{
-		if (Row && Row->HitType == HitType && Row->idx == HitIdx)
-		{
-			if (Row->Montage)
-			{
-				float Duration = PlayAnimMontage(Row->Montage, Row->PlayRate);
-				if (Duration > 0.0f)
-				{
-					// Character.State.Hitted 태그 추가
-					FGameplayTag HittedTag = FGameplayTags::Get().HittedStateTag;
-					AbilitySystemComponent->AddLooseGameplayTag(HittedTag);
-
-					// 몽타주가 끝나면 태그 제거를 위한 타이머 설정
-					FTimerHandle TimerHandle;
-					GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, HittedTag]()
-					{
-						if (AbilitySystemComponent)
-						{
-							AbilitySystemComponent->RemoveLooseGameplayTag(HittedTag);
-						}
-					}), Duration, false);
-				}
-			}
-
-			// 물리 효과 적용
-			float FinalDist = (LaunchDistance > 0.0f) ? LaunchDistance : Row->LaunchDistance;
-			float FinalHeight = (LaunchHeight > 0.0f) ? LaunchHeight : Row->LaunchHeight;
-
-			if (FinalDist > 0.0f || FinalHeight > 0.0f)
-			{
-				FVector LaunchDir = -1 * GetActorForwardVector();
-				LaunchDir.Z = 0.0f;
-				LaunchDir.Normalize();
-
-				FVector LaunchVelocity = LaunchDir * FinalDist;
-				LaunchVelocity.Z = FinalHeight;
-
-				LaunchCharacter(LaunchVelocity, true, true);
-			}
-			break;
-		}
-	}
+	// 명시적으로 UGA_Hitted 어빌리티 클래스를 사용하여 실행 시도
+	AbilitySystemComponent->TryActivateAbilityByClass(UGA_Hitted::StaticClass(), true);
 }
 
 void ACharacterBase::ApplyDamageToTarget(AActor* SourceActor, AActor* TargetActor, const FHitInfo& HitInfo)

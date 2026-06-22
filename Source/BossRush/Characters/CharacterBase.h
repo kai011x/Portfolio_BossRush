@@ -59,14 +59,6 @@ public:
 
 
 UENUM(BlueprintType)
-enum class ESize : uint8
-{
-	Small,
-	Normal,
-	Big
-};
-
-UENUM(BlueprintType)
 enum class EIdentity : uint8
 {
 	Player,
@@ -85,9 +77,6 @@ public:
 	virtual class UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State", Replicated)
-	ESize CharacterSize = ESize::Normal;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State", Replicated)
 	EIdentity Identity = EIdentity::Player;
 
@@ -199,14 +188,14 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Jump")
 	void BaseJump(const FInputActionValue& Value);
-UFUNCTION(BlueprintCallable, Category = "AttackAction")
-virtual void OnNormalAttackInput();
-
+	UFUNCTION(BlueprintCallable, Category = "AttackAction")
+	virtual void OnNormalAttackInput();
+	
 protected:
-// --- 공격 타입별 헬퍼 함수 ---
-virtual bool HandleSprintAttack();
-virtual bool HandleDashAttack();
-virtual void HandleNormalComboAttack();
+	// --- 공격 타입별 헬퍼 함수 ---
+	virtual bool HandleSprintAttack();
+	virtual bool HandleDashAttack();
+	virtual void HandleNormalComboAttack();
 
 public:
 UFUNCTION(BlueprintCallable, Category = "Abilities")
@@ -265,6 +254,13 @@ protected:
 	FHitInfo CurrentHitInfo;
 
 	TArray<AActor*> AlreadyHitActors;
+
+public:
+	UPROPERTY(BlueprintReadOnly, Category = "Combat|Hit")
+	FHitInfo LastHitData;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat|Hit")
+	TObjectPtr<AActor> LastHitInstigator = nullptr;
 
 public:
 	/** Returns CameraBoom subobject **/

@@ -14,6 +14,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Abilities/GameplayAbilityTargetActor.h"
 #include "Blueprint/UserWidget.h"
+#include "GAS/Abilities/GATA_ArrowLineTrace.h"
+#include "Abilities/GameplayAbilityTargetTypes.h"
 
 AArcher::AArcher()
 {
@@ -126,9 +128,17 @@ void AArcher::StartAim()
 
 	StopSprint();
 
-	if (HasAuthority())
+	if (IsLocallyControlled())
 	{
 		GetOrCreateTargetActor();
+		if (AGATA_ArrowLineTrace* TraceActor = Cast<AGATA_ArrowLineTrace>(TargetActor))
+		{
+			TraceActor->bDebug = true;
+			TraceActor->MaxRange = 10000.0f;
+			TraceActor->StartLocation.LocationType = EGameplayAbilityTargetingLocationType::Type::ActorTransform;
+			TraceActor->StartLocation.SourceActor = this;
+			TraceActor->bUsePlayerCameraDirection = true;
+		}
 	}
 
 	if (CurrentArrow)
@@ -175,7 +185,7 @@ void AArcher::StartAim()
 
 void AArcher::StopAim()
 {
-	if (HasAuthority() && TargetActor)
+	if (TargetActor)
 	{
 		TargetActor->Destroy();
 		TargetActor = nullptr;
@@ -262,7 +272,7 @@ void AArcher::OnNormalAttackInput()
 	HandleNormalComboAttack();
 }
 
-void AArcher::DrawArrow(EHitType HitType, float Multiplier, int32 HitIdx, float LaunchDistance, float LaunchHeight)
+void AArcher::DrawArrow()
 {
 	if (!HasAuthority()) return;
 
@@ -273,7 +283,6 @@ void AArcher::DrawArrow(EHitType HitType, float Multiplier, int32 HitIdx, float 
 	if (CurrentArrow)
 	{
 		CurrentArrow->Prepare();
-		CurrentArrow->SetAttackData(DamageEffectClass, Multiplier, HitType, HitIdx, LaunchDistance, LaunchHeight);
 		
 		CurrentArrow->SetActorHiddenInGame(false);
 
@@ -282,31 +291,39 @@ void AArcher::DrawArrow(EHitType HitType, float Multiplier, int32 HitIdx, float 
 	}
 }
 
-void AArcher::ShootArrow()
+void AArcher::ShootArrow(EHitType HitType, float Multiplier, int32 HitIdx, float LaunchDistance, float LaunchHeight)
 {
 	if (!HasAuthority()) return;
-
+	
 	if (CurrentArrow)
 	{
 		CurrentArrow->SetActorHiddenInGame(false);
-
+		CurrentArrow->SetAttackData(DamageEffectClass, Multiplier, HitType,HitIdx, LaunchDistance, LaunchHeight);
 		FVector LaunchDirection = GetActorForwardVector();
 
-		// 조준 중일 때 타겟 정보가 있으면 해당 방향으로 발사
+		// 조준 중일 때 카메라에서 레이캐스트를 쏴서 충돌한 지점으로 발사 방향 결정
 		bool bIsAiming = AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTags::Get().AimingStateTag);
 		
-		if (bIsAiming)
+		if (bIsAiming && FollowCamera)
 		{
-			// 타겟 위치가 유효한지(0,0,0이 아닌지) 확인
-			if (bHasAimTarget && !AimTargetLocation.IsNearlyZero())
+			FVector TraceStart = FollowCamera->GetComponentLocation();
+			FVector TraceEnd = TraceStart + (FollowCamera->GetForwardVector() * 10000.0f); // 100미터 레이캐스트
+
+			FHitResult HitResult;
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(this);
+			if (CurrentArrow)
 			{
-				LaunchDirection = (AimTargetLocation - CurrentArrow->GetActorLocation()).GetSafeNormal();
+				QueryParams.AddIgnoredActor(CurrentArrow);
 			}
-			else if (FollowCamera)
+
+			FVector TargetPoint = TraceEnd;
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Visibility, QueryParams))
 			{
-				// 타겟 데이터가 없으면 카메라의 정면 방향을 사용
-				LaunchDirection = FollowCamera->GetForwardVector();
+				TargetPoint = HitResult.ImpactPoint;
 			}
+
+			LaunchDirection = (TargetPoint - CurrentArrow->GetActorLocation()).GetSafeNormal();
 		}
 
 		CurrentArrow->Launch(LaunchDirection);

@@ -66,7 +66,7 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 	if (FMath::FRandRange(0.0f, 100.0f) <= CriticalChance)
 	{
 		CriticalMultiplier = 2.0f;
-		// 치명타 시 타겟에게 치명타 태그를 부여하거나 추가 이벤트를 발생시킬 수 있습니다.
+		OutExecutionOutput.AddTargetGameplayTag(FGameplayTag::RequestGameplayTag(FName("Data.Damage.Critical")));
 	}
 
 	float FinalDamage = Damage * CriticalMultiplier;
